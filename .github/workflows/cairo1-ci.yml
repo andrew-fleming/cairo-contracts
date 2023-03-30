@@ -1,0 +1,18 @@
+name: Test and linter
+
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches:
+    - cairo-1
+
+jobs:
+  linter:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Cairo linter
+      env:
+        TOKEN: ${{ secrets.TOKEN }}
+      run: make format
