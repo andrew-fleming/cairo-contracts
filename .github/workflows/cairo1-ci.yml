@@ -23,7 +23,7 @@ jobs:
       uses: docker://avtodev/markdown-lint:v1
       with:
         #args: README.md CONTRIBUTING.md docs
-        args: *.md
+        args: '*.md'
     - name: Cairo linter
       run: make check-format
     - name: Cairo test
