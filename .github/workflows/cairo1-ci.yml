@@ -20,8 +20,8 @@ jobs:
       with:
         submodules: recursive
         #ref: 'cairo-1'
-    - name: Install rust
-      run: rustup update
+    #- name: Install rust
+    #  run: rustup update
     - name: Cairo linter
       run: make check-format
     - name: Cairo test
