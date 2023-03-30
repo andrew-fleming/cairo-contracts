@@ -24,6 +24,7 @@ jobs:
       with:
         #args: README.md CONTRIBUTING.md docs
         args: '*.md'
+        ignore: './PULL_REQUEST_TEMPLATE.md'
     - name: Cairo linter
       run: make check-format
     - name: Cairo test
