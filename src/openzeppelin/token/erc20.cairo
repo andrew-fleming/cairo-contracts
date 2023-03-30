@@ -184,7 +184,7 @@ mod ERC20 {
         assert(!owner.is_zero(), 'ERC20: approve from 0');
         assert(!spender.is_zero(), 'ERC20: approve to 0');
         _allowances::write((owner, spender), amount);
-            Approval(owner, spender, amount);
+        Approval(owner, spender, amount);
     }
 
     fn _transfer(sender: ContractAddress, recipient: ContractAddress, amount: u256) {
