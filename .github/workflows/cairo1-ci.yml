@@ -13,7 +13,7 @@ env:
 
 jobs:
   lint_and_test:
-    name: Rust project - latest
+    name: Cairo lint and test
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -22,6 +22,6 @@ jobs:
     - name: Install rust
       run: rustup update
     - name: Cairo linter
-      #env:
-      #  TOKEN: ${{ secrets.TOKEN }}
       run: make check-format
+    - name: Cairo test
+      run: make test
