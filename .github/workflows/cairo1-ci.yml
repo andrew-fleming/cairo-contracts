@@ -12,7 +12,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  Lint and test:
+  lint_and_test:
     name: Rust project - latest
     runs-on: ubuntu-latest
     steps:
