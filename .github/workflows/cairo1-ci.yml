@@ -24,4 +24,4 @@ jobs:
     - name: Cairo linter
       env:
         TOKEN: ${{ secrets.TOKEN }}
-      run: make format
+      run: make check-format
