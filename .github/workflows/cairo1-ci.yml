@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
   push:
     branches:
+    - cairo-ci
     - cairo-1
 
 jobs:
