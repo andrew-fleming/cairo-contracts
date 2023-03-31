@@ -8,8 +8,8 @@ on:
     - cairo1-ci
     #- cairo-1
 
-env:
-  CARGO_TERM_COLOR: always
+#env:
+#  CARGO_TERM_COLOR: always
 
 jobs:
   lint_and_test:
@@ -27,5 +27,7 @@ jobs:
           !PULL_REQUEST_TEMPLATE.md
     - name: Cairo lint
       run: make check-format
+      env:
+        CARGO_TERM_COLOR: always
     - name: Cairo test
       run: make test
