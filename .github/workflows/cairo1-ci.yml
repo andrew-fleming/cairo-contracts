@@ -18,15 +18,12 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        fetch-depth: 0  # super-linter needs full git history
         submodules: recursive
     - name: Lint Code Base
-      uses: github/super-linter/slim@v4
-      env:
-        VALIDATE_ALL_CODEBASE: false
-        FILTER_REGEX_INCLUDE: '*.md'
-        #DEFAULT_BRANCH: master
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: DavidAnson/markdownlint-cli2-action@v9
+        with:
+          globs: '*.md'
+          ignores: 'PULL_REQUEST_TEMPLATE'
 
     - name: Cairo linter
       run: make check-format
