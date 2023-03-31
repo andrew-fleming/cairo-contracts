@@ -192,7 +192,7 @@ mod ERC20 {
         assert(!recipient.is_zero(), 'ERC20: transfer to 0');
         _balances::write(sender, _balances::read(sender) - amount);
         _balances::write(recipient, _balances::read(recipient) + amount);
-            Transfer(sender, recipient, amount);
+        Transfer(sender, recipient, amount);
     }
 
     fn _spend_allowance(owner: ContractAddress, spender: ContractAddress, amount: u256) {

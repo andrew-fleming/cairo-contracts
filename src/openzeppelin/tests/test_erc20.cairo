@@ -67,7 +67,7 @@ fn test_constructor() {
     assert(ERC20::total_supply() == initial_supply, 'Should eq inital_supply');
     assert(ERC20::name() == NAME, 'Name should be NAME');
     assert(ERC20::symbol() == SYMBOL, 'Symbol should be SYMBOL');
-    assert(ERC20::decimals() == decimals, 'Decimals should be 18');
+    assert(ERC20::decimals() == 19_u8, 'Decimals should be 18');
 }
 
 #[test]
