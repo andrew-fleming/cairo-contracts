@@ -24,7 +24,7 @@ jobs:
       with:
         globs: |
           *.md
-          !PULL_REQUEST_TEMPLATE
+          !PULL_REQUEST_TEMPLATE.md
 
 #    - name: Cairo linter
 #      run: make check-format
