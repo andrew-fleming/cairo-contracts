@@ -20,20 +20,22 @@ jobs:
       with:
         fetch-depth: 0  # super-linter needs full git history
         submodules: recursive
-#    - name: Markdown lint
-#      uses: docker://avtodev/markdown-lint:v1
-#      with:
-#        args: '*.md'
-#        ignore: './PULL_REQUEST_TEMPLATE.md'
-      - name: Lint Code Base
-        uses: github/super-linter/slim@v4
-        env:
-          VALIDATE_ALL_CODEBASE: false
-          FILTER_REGEX_INCLUDE: '*.md'
-          #DEFAULT_BRANCH: master
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Lint Code Base
+      uses: github/super-linter/slim@v4
+      env:
+        VALIDATE_ALL_CODEBASE: false
+        FILTER_REGEX_INCLUDE: '*.md'
+        #DEFAULT_BRANCH: master
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Cairo linter
       run: make check-format
     - name: Cairo test
       run: make test
+
+
+#    - name: Markdown lint
+#      uses: docker://avtodev/markdown-lint:v1
+#      with:
+#        args: '*.md'
+#        ignore: './PULL_REQUEST_TEMPLATE.md'
