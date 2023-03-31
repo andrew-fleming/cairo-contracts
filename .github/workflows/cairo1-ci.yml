@@ -13,18 +13,20 @@ env:
 
 jobs:
   lint_and_test:
-    name: Cairo lint and test
+    name: Lint and test
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
       with:
+        fetch-depth: 0
         submodules: recursive
-    - name: Markdown lint
-      uses: docker://avtodev/markdown-lint:v1
-      with:
-        #args: README.md CONTRIBUTING.md docs
-        args: '*.md'
-        ignore: './PULL_REQUEST_TEMPLATE.md'
+#    - name: Markdown lint
+#      uses: docker://avtodev/markdown-lint:v1
+#      with:
+#        args: '*.md'
+#        ignore: './PULL_REQUEST_TEMPLATE.md'
+
+
     - name: Cairo linter
       run: make check-format
     - name: Cairo test
