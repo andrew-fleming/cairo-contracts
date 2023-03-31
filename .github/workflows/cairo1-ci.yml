@@ -22,7 +22,7 @@ jobs:
     - name: Lint Code Base
       uses: DavidAnson/markdownlint-cli2-action@v9
       with:
-        globs: '*.md'
+        globs: '*.md', '!PULL_REQUEST_TEMPLATE'
 
 #    - name: Cairo linter
 #      run: make check-format
