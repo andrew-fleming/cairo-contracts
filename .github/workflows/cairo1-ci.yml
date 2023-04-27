@@ -26,6 +26,6 @@ jobs:
           *.md
           !PULL_REQUEST_TEMPLATE.md
     - name: Cairo lint
-      run: make check-format
-    - name: Cairo test
-      run: make test
+      run: |
+        make check-format
+        make test
