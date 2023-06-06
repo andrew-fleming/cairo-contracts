@@ -2,16 +2,20 @@
 mod ReentrancyGuard {
     use starknet::get_caller_address;
 
+    #[starknet::storage]
     struct Storage {
         entered: bool
     }
 
-    fn start() {
-        assert(!entered::read(), 'ReentrancyGuard: reentrant call');
-        entered::write(true);
-    }
+    #[generate_trait]
+    impl StorageImpl of StorageTrait {
+        fn start(ref self: Storage) {
+            assert(!self.entered.read(), 'ReentrancyGuard: reentrant call');
+            self.entered.write(true);
+        }
 
-    fn end() {
-        entered::write(false);
+        fn end(ref self: Storage) {
+            self.entered.write(false);
+        }
     }
 }

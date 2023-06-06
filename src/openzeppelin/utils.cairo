@@ -10,7 +10,7 @@ fn check_gas() {
     match gas::withdraw_gas() {
         Option::Some(_) => {},
         Option::None(_) => {
-            let mut data = ArrayTrait::new();
+            let mut data = Default::default();
             data.append('Out of gas');
             panic(data);
         },
