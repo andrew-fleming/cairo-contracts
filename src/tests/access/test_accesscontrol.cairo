@@ -42,7 +42,6 @@ fn setup() -> ComponentState {
 //
 
 #[test]
-#[available_gas(2000000)]
 fn test_initializer() {
     let mut state = COMPONENT_STATE();
     state.initializer();
@@ -54,7 +53,6 @@ fn test_initializer() {
 //
 
 #[test]
-#[available_gas(2000000)]
 fn test_has_role() {
     let mut state = setup();
     assert(!state.has_role(ROLE, AUTHORIZED()), 'should not have role');
@@ -63,7 +61,6 @@ fn test_has_role() {
 }
 
 #[test]
-#[available_gas(2000000)]
 fn test_hasRole() {
     let mut state = setup();
     assert(!state.hasRole(ROLE, AUTHORIZED()), 'should not have role');
@@ -76,7 +73,6 @@ fn test_hasRole() {
 //
 
 #[test]
-#[available_gas(2000000)]
 fn test_assert_only_role() {
     let mut state = setup();
     testing::set_caller_address(ADMIN());
@@ -87,7 +83,6 @@ fn test_assert_only_role() {
 }
 
 #[test]
-#[available_gas(2000000)]
 #[should_panic(expected: ('Caller is missing role',))]
 fn test_assert_only_role_unauthorized() {
     let state = setup();
@@ -96,7 +91,6 @@ fn test_assert_only_role_unauthorized() {
 }
 
 #[test]
-#[available_gas(2000000)]
 #[should_panic(expected: ('Caller is missing role',))]
 fn test_assert_only_role_unauthorized_when_authorized_for_another_role() {
     let mut state = setup();
@@ -111,7 +105,6 @@ fn test_assert_only_role_unauthorized_when_authorized_for_another_role() {
 //
 
 #[test]
-#[available_gas(2000000)]
 fn test_grant_role() {
     let mut state = setup();
     testing::set_caller_address(ADMIN());
@@ -122,7 +115,6 @@ fn test_grant_role() {
 }
 
 #[test]
-#[available_gas(2000000)]
 fn test_grantRole() {
     let mut state = setup();
     testing::set_caller_address(ADMIN());
@@ -133,7 +125,6 @@ fn test_grantRole() {
 }
 
 #[test]
-#[available_gas(2000000)]
 fn test_grant_role_multiple_times_for_granted_role() {
     let mut state = setup();
     testing::set_caller_address(ADMIN());
@@ -144,7 +135,6 @@ fn test_grant_role_multiple_times_for_granted_role() {
 }
 
 #[test]
-#[available_gas(2000000)]
 fn test_grantRole_multiple_times_for_granted_role() {
     let mut state = setup();
     testing::set_caller_address(ADMIN());
@@ -155,7 +145,6 @@ fn test_grantRole_multiple_times_for_granted_role() {
 }
 
 #[test]
-#[available_gas(2000000)]
 #[should_panic(expected: ('Caller is missing role',))]
 fn test_grant_role_unauthorized() {
     let mut state = setup();
@@ -164,7 +153,6 @@ fn test_grant_role_unauthorized() {
 }
 
 #[test]
-#[available_gas(2000000)]
 #[should_panic(expected: ('Caller is missing role',))]
 fn test_grantRole_unauthorized() {
     let mut state = setup();
@@ -177,7 +165,6 @@ fn test_grantRole_unauthorized() {
 //
 
 #[test]
-#[available_gas(2000000)]
 fn test_revoke_role_for_role_not_granted() {
     let mut state = setup();
     testing::set_caller_address(ADMIN());
@@ -185,7 +172,6 @@ fn test_revoke_role_for_role_not_granted() {
 }
 
 #[test]
-#[available_gas(2000000)]
 fn test_revokeRole_for_role_not_granted() {
     let mut state = setup();
     testing::set_caller_address(ADMIN());
@@ -193,7 +179,6 @@ fn test_revokeRole_for_role_not_granted() {
 }
 
 #[test]
-#[available_gas(2000000)]
 fn test_revoke_role_for_granted_role() {
     let mut state = setup();
     testing::set_caller_address(ADMIN());
@@ -208,7 +193,6 @@ fn test_revoke_role_for_granted_role() {
 }
 
 #[test]
-#[available_gas(2000000)]
 fn test_revokeRole_for_granted_role() {
     let mut state = setup();
     testing::set_caller_address(ADMIN());
@@ -223,7 +207,6 @@ fn test_revokeRole_for_granted_role() {
 }
 
 #[test]
-#[available_gas(2000000)]
 fn test_revoke_role_multiple_times_for_granted_role() {
     let mut state = setup();
     testing::set_caller_address(ADMIN());
@@ -235,7 +218,6 @@ fn test_revoke_role_multiple_times_for_granted_role() {
 }
 
 #[test]
-#[available_gas(2000000)]
 fn test_revokeRole_multiple_times_for_granted_role() {
     let mut state = setup();
     testing::set_caller_address(ADMIN());
@@ -247,7 +229,6 @@ fn test_revokeRole_multiple_times_for_granted_role() {
 }
 
 #[test]
-#[available_gas(2000000)]
 #[should_panic(expected: ('Caller is missing role',))]
 fn test_revoke_role_unauthorized() {
     let mut state = setup();
@@ -256,7 +237,6 @@ fn test_revoke_role_unauthorized() {
 }
 
 #[test]
-#[available_gas(2000000)]
 #[should_panic(expected: ('Caller is missing role',))]
 fn test_revokeRole_unauthorized() {
     let mut state = setup();
@@ -269,7 +249,6 @@ fn test_revokeRole_unauthorized() {
 //
 
 #[test]
-#[available_gas(2000000)]
 fn test_renounce_role_for_role_not_granted() {
     let mut state = setup();
     testing::set_caller_address(AUTHORIZED());
@@ -277,7 +256,6 @@ fn test_renounce_role_for_role_not_granted() {
 }
 
 #[test]
-#[available_gas(2000000)]
 fn test_renounceRole_for_role_not_granted() {
     let mut state = setup();
     testing::set_caller_address(AUTHORIZED());
@@ -285,7 +263,6 @@ fn test_renounceRole_for_role_not_granted() {
 }
 
 #[test]
-#[available_gas(2000000)]
 fn test_renounce_role_for_granted_role() {
     let mut state = setup();
     testing::set_caller_address(ADMIN());
@@ -301,7 +278,6 @@ fn test_renounce_role_for_granted_role() {
 }
 
 #[test]
-#[available_gas(2000000)]
 fn test_renounceRole_for_granted_role() {
     let mut state = setup();
     testing::set_caller_address(ADMIN());
@@ -317,7 +293,6 @@ fn test_renounceRole_for_granted_role() {
 }
 
 #[test]
-#[available_gas(2000000)]
 fn test_renounce_role_multiple_times_for_granted_role() {
     let mut state = setup();
     testing::set_caller_address(ADMIN());
@@ -330,7 +305,6 @@ fn test_renounce_role_multiple_times_for_granted_role() {
 }
 
 #[test]
-#[available_gas(2000000)]
 fn test_renounceRole_multiple_times_for_granted_role() {
     let mut state = setup();
     testing::set_caller_address(ADMIN());
@@ -343,7 +317,6 @@ fn test_renounceRole_multiple_times_for_granted_role() {
 }
 
 #[test]
-#[available_gas(2000000)]
 #[should_panic(expected: ('Can only renounce role for self',))]
 fn test_renounce_role_unauthorized() {
     let mut state = setup();
@@ -355,7 +328,6 @@ fn test_renounce_role_unauthorized() {
 }
 
 #[test]
-#[available_gas(2000000)]
 #[should_panic(expected: ('Can only renounce role for self',))]
 fn test_renounceRole_unauthorized() {
     let mut state = setup();
@@ -371,7 +343,6 @@ fn test_renounceRole_unauthorized() {
 //
 
 #[test]
-#[available_gas(2000000)]
 fn test__set_role_admin() {
     let mut state = setup();
     assert(state.get_role_admin(ROLE) == DEFAULT_ADMIN_ROLE, 'ROLE admin default should be 0');
@@ -382,7 +353,6 @@ fn test__set_role_admin() {
 }
 
 #[test]
-#[available_gas(2000000)]
 fn test_new_admin_can_grant_roles() {
     let mut state = setup();
     state._set_role_admin(ROLE, OTHER_ROLE);
@@ -396,7 +366,6 @@ fn test_new_admin_can_grant_roles() {
 }
 
 #[test]
-#[available_gas(2000000)]
 fn test_new_admin_can_revoke_roles() {
     let mut state = setup();
     state._set_role_admin(ROLE, OTHER_ROLE);
@@ -411,7 +380,6 @@ fn test_new_admin_can_revoke_roles() {
 }
 
 #[test]
-#[available_gas(2000000)]
 #[should_panic(expected: ('Caller is missing role',))]
 fn test_previous_admin_cannot_grant_roles() {
     let mut state = setup();
@@ -421,7 +389,6 @@ fn test_previous_admin_cannot_grant_roles() {
 }
 
 #[test]
-#[available_gas(2000000)]
 #[should_panic(expected: ('Caller is missing role',))]
 fn test_previous_admin_cannot_revoke_roles() {
     let mut state = setup();
@@ -435,14 +402,12 @@ fn test_previous_admin_cannot_revoke_roles() {
 //
 
 #[test]
-#[available_gas(2000000)]
 fn test_other_role_admin_is_the_default_admin_role() {
     let state = setup();
     assert(state.get_role_admin(OTHER_ROLE) == DEFAULT_ADMIN_ROLE, 'Should be DEFAULT_ADMIN_ROLE');
 }
 
 #[test]
-#[available_gas(2000000)]
 fn test_default_admin_role_is_its_own_admin() {
     let state = setup();
     assert(

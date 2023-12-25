@@ -24,7 +24,6 @@ fn deploy_mock() -> IReentrancyMockDispatcher {
 //
 
 #[test]
-#[available_gas(2000000)]
 fn test_reentrancy_guard_start() {
     let mut state = COMPONENT_STATE();
 
@@ -34,7 +33,6 @@ fn test_reentrancy_guard_start() {
 }
 
 #[test]
-#[available_gas(2000000)]
 #[should_panic(expected: ('ReentrancyGuard: reentrant call',))]
 fn test_reentrancy_guard_start_when_started() {
     let mut state = COMPONENT_STATE();
@@ -44,7 +42,6 @@ fn test_reentrancy_guard_start_when_started() {
 }
 
 #[test]
-#[available_gas(2000000)]
 fn test_reentrancy_guard_end() {
     let mut state = COMPONENT_STATE();
 
@@ -59,7 +56,6 @@ fn test_reentrancy_guard_end() {
 //
 
 #[test]
-#[available_gas(2000000)]
 #[should_panic(
     expected: (
         'ReentrancyGuard: reentrant call',
@@ -79,7 +75,6 @@ fn test_remote_callback() {
 }
 
 #[test]
-#[available_gas(2000000)]
 #[should_panic(expected: ('ReentrancyGuard: reentrant call', 'ENTRYPOINT_FAILED'))]
 fn test_local_recursion() {
     let contract = deploy_mock();
@@ -87,7 +82,6 @@ fn test_local_recursion() {
 }
 
 #[test]
-#[available_gas(2000000)]
 #[should_panic(
     expected: ('ReentrancyGuard: reentrant call', 'ENTRYPOINT_FAILED', 'ENTRYPOINT_FAILED')
 )]
@@ -97,7 +91,6 @@ fn test_external_recursion() {
 }
 
 #[test]
-#[available_gas(2000000)]
 fn test_nonreentrant_function_call() {
     let contract = deploy_mock();
     contract.callback();
