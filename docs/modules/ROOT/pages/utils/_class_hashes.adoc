@@ -1,5 +1,5 @@
 // Version
-:class-hash-cairo-version: https://crates.io/crates/cairo-lang-compiler/2.4.4[cairo 2.4.4]
+:class-hash-cairo-version: https://crates.io/crates/cairo-lang-compiler/2.4.1[cairo 2.4.1]
 
 // Class Hashes
 :Account-class-hash: 0x402765bcede84b1267a9d4658a7737c3c41a8caf6201984c3df95577c2298a3
