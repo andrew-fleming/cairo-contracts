@@ -16,7 +16,7 @@ jobs:
     - uses: software-mansion/setup-scarb@v1
       id: setup_scarb
       with:
-        scarb-version: "2.4.4"
+        scarb-version: "2.4.1"
     - uses: actions/checkout@v3
     - uses: ericnordelo/setup-class-hash@v1
       with:
