@@ -16,19 +16,8 @@ mod ERC721 {
 
     // ERC721
     #[abi(embed_v0)]
-    impl ERC721Impl = ERC721Component::ERC721Impl<ContractState>;
-    #[abi(embed_v0)]
-    impl ERC721MetadataImpl = ERC721Component::ERC721MetadataImpl<ContractState>;
-    #[abi(embed_v0)]
-    impl ERC721CamelOnly = ERC721Component::ERC721CamelOnlyImpl<ContractState>;
-    #[abi(embed_v0)]
-    impl ERC721MetadataCamelOnly =
-        ERC721Component::ERC721MetadataCamelOnlyImpl<ContractState>;
+    impl ERC721ABIImpl = ERC721Component::ERC721ABIImpl<ContractState>;
     impl ERC721InternalImpl = ERC721Component::InternalImpl<ContractState>;
-
-    // SRC5
-    #[abi(embed_v0)]
-    impl SRC5Impl = SRC5Component::SRC5Impl<ContractState>;
 
     #[storage]
     struct Storage {
