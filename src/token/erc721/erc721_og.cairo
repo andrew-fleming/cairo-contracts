@@ -7,7 +7,6 @@
 /// and the IERC721Metadata interface.
 #[starknet::component]
 mod ERC721Component {
-    use core::to_byte_array::FormatAsByteArray;
     use openzeppelin::account;
     use openzeppelin::introspection::dual_src5::{DualCaseSRC5, DualCaseSRC5Trait};
     use openzeppelin::introspection::src5::SRC5Component::InternalTrait as SRC5InternalTrait;
@@ -27,7 +26,7 @@ mod ERC721Component {
         ERC721_balances: LegacyMap<ContractAddress, u256>,
         ERC721_token_approvals: LegacyMap<u256, ContractAddress>,
         ERC721_operator_approvals: LegacyMap<(ContractAddress, ContractAddress), bool>,
-        ERC721_base_uri: ByteArray,
+        ERC721_token_uri: LegacyMap<u256, ByteArray>,
     }
 
     #[event]
@@ -227,21 +226,14 @@ mod ERC721Component {
         }
 
         /// Returns the Uniform Resource Identifier (URI) for the `token_id` token.
-        /// If the URI is not set, the return value will be an empty ByteArray.
+        /// If the URI is not set for the `token_id`, the return value will be `0`.
         ///
         /// Requirements:
         ///
         /// - `token_id` exists.
         fn token_uri(self: @ComponentState<TContractState>, token_id: u256) -> ByteArray {
             assert(self._exists(token_id), Errors::INVALID_TOKEN_ID);
-            let base_uri = self._base_uri();
-            if base_uri.len() == 0 {
-                return "";
-            } else {
-                let dec_base: NonZero<u256> = 10_u256.try_into().unwrap();
-                let id = token_id.format_as_byte_array(dec_base);
-                return ByteArrayTrait::concat(@base_uri, @id);
-            }
+            self.ERC721_token_uri.read(token_id)
         }
     }
 
@@ -324,11 +316,10 @@ mod ERC721Component {
         /// Initializes the contract by setting the token name and symbol.
         /// This should only be used inside the contract's constructor.
         fn initializer(
-            ref self: ComponentState<TContractState>, name: ByteArray, symbol: ByteArray, base_uri: ByteArray
+            ref self: ComponentState<TContractState>, name: ByteArray, symbol: ByteArray
         ) {
             self.ERC721_name.write(name);
             self.ERC721_symbol.write(symbol);
-            self._set_base_uri(base_uri);
 
             let mut src5_component = get_dep_component_mut!(ref self, SRC5);
             src5_component.register_interface(interface::IERC721_ID);
@@ -528,14 +519,11 @@ mod ERC721Component {
         /// Requirements:
         ///
         /// - `token_id` exists.
-        fn _set_base_uri(
-            ref self: ComponentState<TContractState>, token_uri: ByteArray
+        fn _set_token_uri(
+            ref self: ComponentState<TContractState>, token_id: u256, token_uri: ByteArray
         ) {
-            self.ERC721_base_uri.write(token_uri);
-        }
-
-        fn _base_uri(self: @ComponentState<TContractState>) -> ByteArray {
-            self.ERC721_base_uri.read()
+            assert(self._exists(token_id), Errors::INVALID_TOKEN_ID);
+            self.ERC721_token_uri.write(token_id, token_uri)
         }
     }
 

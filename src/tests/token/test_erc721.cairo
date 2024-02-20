@@ -1,3 +1,6 @@
+use core::to_byte_array::FormatAsByteArray;
+use core::traits::TryInto;
+use openzeppelin::token::erc721::erc721::ERC721Component::InternalTrait;
 use integer::u256_from_felt252;
 use openzeppelin::account::AccountComponent;
 use openzeppelin::introspection::src5::SRC5Component::SRC5Impl;
@@ -39,9 +42,13 @@ fn COMPONENT_STATE() -> ComponentState {
     ERC721Component::component_state_for_testing()
 }
 
+fn BASE_URI() -> ByteArray {
+    "https://api.example.com/v1/'"
+}
+
 fn setup() -> ComponentState {
     let mut state = COMPONENT_STATE();
-    state.initializer(NAME(), SYMBOL());
+    state.initializer(NAME(), SYMBOL(), BASE_URI());
     state._mint(OWNER(), TOKEN_ID);
     utils::drop_event(ZERO());
     state
@@ -74,7 +81,7 @@ fn test_initialize() {
     let mut state = COMPONENT_STATE();
     let mock_state = CONTRACT_STATE();
 
-    state.initializer(NAME(), SYMBOL());
+    state.initializer(NAME(), SYMBOL(), BASE_URI());
 
     assert_eq!(state.name(), NAME());
     assert_eq!(state.symbol(), SYMBOL());
@@ -772,7 +779,7 @@ fn test_safe_transfer_from_to_owner() {
     let mut state = COMPONENT_STATE();
     let token_id = TOKEN_ID;
     let owner = setup_receiver();
-    state.initializer(NAME(), SYMBOL());
+    state.initializer(NAME(), SYMBOL(), BASE_URI());
     state._mint(owner, token_id);
     utils::drop_event(ZERO());
 
@@ -792,7 +799,7 @@ fn test_safeTransferFrom_to_owner() {
     let mut state = COMPONENT_STATE();
     let token_id = TOKEN_ID;
     let owner = setup_receiver();
-    state.initializer(NAME(), SYMBOL());
+    state.initializer(NAME(), SYMBOL(), BASE_URI());
     state._mint(owner, token_id);
     utils::drop_event(ZERO());
 
@@ -812,7 +819,7 @@ fn test_safe_transfer_from_to_owner_camel() {
     let mut state = COMPONENT_STATE();
     let token_id = TOKEN_ID;
     let owner = setup_camel_receiver();
-    state.initializer(NAME(), SYMBOL());
+    state.initializer(NAME(), SYMBOL(), BASE_URI());
     state._mint(owner, token_id);
     utils::drop_event(ZERO());
 
@@ -832,7 +839,7 @@ fn test_safeTransferFrom_to_owner_camel() {
     let mut state = COMPONENT_STATE();
     let token_id = TOKEN_ID;
     let owner = setup_camel_receiver();
-    state.initializer(NAME(), SYMBOL());
+    state.initializer(NAME(), SYMBOL(), BASE_URI());
     state._mint(owner, token_id);
     utils::drop_event(ZERO());
 
@@ -1231,23 +1238,68 @@ fn test__burn_nonexistent() {
 }
 
 //
-// _set_token_uri
+// _base_uri & _set_base_uri
 //
 
 #[test]
-fn test__set_token_uri() {
+fn test__base_uri() {
     let mut state = setup();
 
-    assert!(state.token_uri(TOKEN_ID).len().is_zero());
-    state._set_token_uri(TOKEN_ID, URI());
-    assert_eq!(state.token_uri(TOKEN_ID), URI());
+    let base_uri = state._base_uri();
+    assert_eq!(base_uri, BASE_URI());
+}
+
+#[test]
+fn test__base_uri_not_set() {
+    let mut state = COMPONENT_STATE();
+
+    let empty_uri = state._base_uri();
+    assert_eq!(empty_uri, "");
+}
+
+#[test]
+fn test__set_base_uri() {
+    let mut state = COMPONENT_STATE();
+
+    let empty_uri = state._base_uri();
+    assert_eq!(empty_uri, "");
+
+    state._set_base_uri(BASE_URI());
+
+    let base_uri = state._base_uri();
+    assert_eq!(base_uri, BASE_URI());
+}
+
+//
+// token_uri
+//
+
+#[test]
+fn test_token_uri() {
+    let mut state = setup();
+    let uri = state.token_uri(TOKEN_ID);
+    let dec_base: NonZero<u256> = 10_u256.try_into().unwrap();
+
+    let id_string = TOKEN_ID.format_as_byte_array(dec_base);
+    let expected = ByteArrayTrait::concat(@BASE_URI(), @id_string);
+    assert_eq!(uri, expected);
+}
+
+#[test]
+fn test_token_uri_when_base_uri_not_set() {
+    let mut state = COMPONENT_STATE();
+    state._mint(OWNER(), TOKEN_ID);
+    let uri = state.token_uri(TOKEN_ID);
+    let empty: ByteArray = "";
+    assert_eq!(uri, empty);
 }
 
 #[test]
 #[should_panic(expected: ('ERC721: invalid token ID',))]
-fn test__set_token_uri_nonexistent() {
-    let mut state = COMPONENT_STATE();
-    state._set_token_uri(TOKEN_ID, URI());
+fn test_token_uri_non_existent() {
+    let mut state = setup();
+    let invalid_id = 12345_u256;
+    state.token_uri(invalid_id);
 }
 
 //
