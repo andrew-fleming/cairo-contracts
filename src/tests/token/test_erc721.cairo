@@ -133,6 +133,17 @@ fn test_token_uri() {
 }
 
 #[test]
+fn test_token_uri_twice() {
+    let state = setup();
+
+    let uri = state.token_uri(TOKEN_ID);
+    let expected = format!("{}{}", BASE_URI(), TOKEN_ID);
+    assert_eq!(uri, expected);
+
+    state.token_uri(TOKEN_ID);
+}
+
+#[test]
 fn test_token_uri_not_set() {
     let mut state = COMPONENT_STATE();
 
@@ -1099,6 +1110,21 @@ fn test__mint() {
     assert_event_transfer(ZERO(), recipient, token_id);
 
     assert_state_after_mint(recipient, token_id);
+}
+
+#[test]
+fn test__mint_once() {
+    let mut state = COMPONENT_STATE();
+
+    state._mint(RECIPIENT(), TOKEN_ID);
+}
+
+#[test]
+fn test__mint_twice() {
+    let mut state = COMPONENT_STATE();
+
+    state._mint(RECIPIENT(), TOKEN_ID);
+    state._mint(RECIPIENT(), TOKEN_ID + 1);
 }
 
 #[test]
