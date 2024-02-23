@@ -198,6 +198,15 @@ fn test_token_uri_non_minted() {
 }
 
 #[test]
+fn test_token_uri() {
+    let dispatcher = setup_dispatcher();
+
+    let uri = dispatcher.token_uri(TOKEN_1);
+    let expected = format!("{}{}", BASE_URI(), TOKEN_1);
+    assert_eq!(uri, expected);
+}
+
+#[test]
 fn test_get_approved() {
     let dispatcher = setup_dispatcher();
     let spender = SPENDER();
