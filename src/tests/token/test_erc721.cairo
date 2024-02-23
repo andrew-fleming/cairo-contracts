@@ -10,7 +10,8 @@ use openzeppelin::tests::mocks::erc721_receiver_mocks::{
 };
 use openzeppelin::tests::mocks::non_implementing_mock::NonImplementingMock;
 use openzeppelin::tests::utils::constants::{
-    DATA, ZERO, OWNER, RECIPIENT, SPENDER, OPERATOR, OTHER, NAME, SYMBOL, TOKEN_ID, PUBKEY, BASE_URI, BASE_URI_2
+    DATA, ZERO, OWNER, RECIPIENT, SPENDER, OPERATOR, OTHER, NAME, SYMBOL, TOKEN_ID, PUBKEY,
+    BASE_URI, BASE_URI_2
 };
 use openzeppelin::tests::utils;
 use openzeppelin::token::erc721::ERC721Component::{

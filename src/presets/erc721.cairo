@@ -72,9 +72,7 @@ mod ERC721 {
         ///
         /// - `token_ids` must be equal in length to `token_uris`.
         fn _mint_assets(
-            ref self: ContractState,
-            recipient: ContractAddress,
-            mut token_ids: Span<u256>
+            ref self: ContractState, recipient: ContractAddress, mut token_ids: Span<u256>
         ) {
             loop {
                 if token_ids.len() == 0 {

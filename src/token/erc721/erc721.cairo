@@ -521,9 +521,7 @@ mod ERC721Component {
         }
 
         /// Sets the base URI.
-        fn _set_base_uri(
-            ref self: ComponentState<TContractState>, base_uri: ByteArray
-        ) {
+        fn _set_base_uri(ref self: ComponentState<TContractState>, base_uri: ByteArray) {
             self.ERC721_base_uri.write(base_uri);
         }
 
