@@ -21,7 +21,7 @@ pub struct Checkpoint {
 }
 
 #[generate_trait]
-impl TraceImpl of TraceTrait {
+pub impl TraceImpl of TraceTrait {
     /// Pushes a (`key`, `value`) pair into a Trace so that it is stored as the checkpoint
     /// and returns both the previous and the new value.
     fn push(ref self: Trace, key: u64, value: u256) -> (u256, u256) {
