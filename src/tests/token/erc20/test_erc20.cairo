@@ -156,7 +156,7 @@ fn test__approve_to_zero() {
 //
 
 #[test]
-fn test_transfer_fix_me() {
+fn test_transfer() {
     let mut state = setup();
     let contract_address = test_address();
     let mut spy = spy_events();
