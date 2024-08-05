@@ -23,7 +23,7 @@ openzeppelin_introspection = { path = "../introspection" }
 openzeppelin_governance = { path = "../governance" }
 
 [dev-dependencies]
-snforge_std.workspace = true
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.26.0" }
 
 [lib]
 

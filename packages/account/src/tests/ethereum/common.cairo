@@ -8,14 +8,22 @@ use openzeppelin_account::interface::EthPublicKey;
 use openzeppelin_account::utils::signature::EthSignature;
 use openzeppelin_token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
 use openzeppelin_utils::serde::SerializedAppend;
-use openzeppelin_utils::test_utils as utils;
-use openzeppelin_utils::test_utils::constants::TRANSACTION_HASH;
-use openzeppelin_utils::test_utils::constants::{NAME, SYMBOL};
-use openzeppelin_utils::test_utils::events::EventSpyExt;
-use openzeppelin_utils::test_utils::signing::{Secp256k1KeyPair, Secp256k1KeyPairExt};
+//use openzeppelin_utils::test_utils as utils;
+//use openzeppelin_utils::test_utils::constants::TRANSACTION_HASH;
+//use openzeppelin_utils::test_utils::constants::{NAME, SYMBOL};
+//use openzeppelin_utils::test_utils::events::EventSpyExt;
+//use openzeppelin_utils::test_utils::signing::{Secp256k1KeyPair, Secp256k1KeyPairExt};
 use snforge_std::EventSpy;
 use snforge_std::signature::secp256k1_curve::Secp256k1CurveSignerImpl;
 use starknet::{ContractAddress, SyscallResultTrait};
+
+pub fn NAME() -> ByteArray {
+    "NAME"
+}
+
+pub fn SYMBOL() -> ByteArray {
+    "NAME"
+}
 
 #[derive(Drop)]
 pub struct SignedTransactionData {

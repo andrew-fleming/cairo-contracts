@@ -1,5 +1,3 @@
-use openzeppelin_utils::test_utils::constants::SUCCESS;
-
 #[starknet::contract]
 pub(crate) mod DualCaseERC1155ReceiverMock {
     use openzeppelin_introspection::src5::SRC5Component;

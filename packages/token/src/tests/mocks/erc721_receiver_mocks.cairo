@@ -1,4 +1,4 @@
-use openzeppelin_utils::test_utils::constants::SUCCESS;
+//use openzeppelin_utils::test_utils::constants::SUCCESS;
 
 #[starknet::contract]
 pub(crate) mod DualCaseERC721ReceiverMock {
@@ -50,7 +50,7 @@ pub(crate) mod DualCaseERC721ReceiverMock {
             token_id: u256,
             data: Span<felt252>
         ) -> felt252 {
-            if *data.at(0) == super::SUCCESS {
+            if *data.at(0) == 'SUCCESS' {
                 self.erc721_receiver.on_erc721_received(operator, from, token_id, data)
             } else {
                 0
@@ -120,7 +120,7 @@ pub(crate) mod SnakeERC721ReceiverMock {
             token_id: u256,
             data: Span<felt252>
         ) -> felt252 {
-            if *data.at(0) == super::SUCCESS {
+            if *data.at(0) == 'SUCCESS' {
                 self.erc721_receiver.on_erc721_received(operator, from, token_id, data)
             } else {
                 0
@@ -179,7 +179,7 @@ pub(crate) mod CamelERC721ReceiverMock {
             tokenId: u256,
             data: Span<felt252>
         ) -> felt252 {
-            if *data.at(0) == super::SUCCESS {
+            if *data.at(0) == 'SUCCESS' {
                 self.erc721_receiver.onERC721Received(operator, from, tokenId, data)
             } else {
                 0

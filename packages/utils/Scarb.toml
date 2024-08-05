@@ -18,7 +18,10 @@ fmt.workspace = true
 
 [dependencies]
 starknet.workspace = true
-snforge_std.workspace = true
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.26.0" }
+
+[dev-dependencies]
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.26.0" }
 
 [lib]
 

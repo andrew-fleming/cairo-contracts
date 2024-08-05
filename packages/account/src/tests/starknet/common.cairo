@@ -4,13 +4,21 @@ use openzeppelin_account::AccountComponent::{OwnerAdded, OwnerRemoved};
 use openzeppelin_account::AccountComponent;
 use openzeppelin_token::erc20::interface::IERC20Dispatcher;
 use openzeppelin_utils::serde::SerializedAppend;
-use openzeppelin_utils::test_utils as utils;
-use openzeppelin_utils::test_utils::constants::{NAME, SYMBOL, TRANSACTION_HASH};
-use openzeppelin_utils::test_utils::events::EventSpyExt;
-use openzeppelin_utils::test_utils::signing::StarkKeyPair;
+//use openzeppelin_utils::test_utils as utils;
+//use openzeppelin_utils::test_utils::constants::{NAME, SYMBOL, TRANSACTION_HASH};
+//use openzeppelin_utils::test_utils::events::EventSpyExt;
+//use openzeppelin_utils::test_utils::signing::StarkKeyPair;
 use snforge_std::EventSpy;
 use snforge_std::signature::stark_curve::StarkCurveSignerImpl;
 use starknet::ContractAddress;
+
+pub fn NAME() -> ByteArray {
+    "NAME"
+}
+
+pub fn SYMBOL() -> ByteArray {
+    "NAME"
+}
 
 #[derive(Drop)]
 pub(crate) struct SignedTransactionData {
