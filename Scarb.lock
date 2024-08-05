@@ -14,7 +14,6 @@ dependencies = [
  "openzeppelin_token",
  "openzeppelin_upgrades",
  "openzeppelin_utils",
- "snforge_std",
 ]
 
 [[package]]
@@ -23,7 +22,6 @@ version = "0.15.0-rc.0"
 dependencies = [
  "openzeppelin_introspection",
  "openzeppelin_utils",
- "snforge_std",
 ]
 
 [[package]]
@@ -33,7 +31,6 @@ dependencies = [
  "openzeppelin_introspection",
  "openzeppelin_token",
  "openzeppelin_utils",
- "snforge_std",
 ]
 
 [[package]]
@@ -43,15 +40,11 @@ dependencies = [
  "openzeppelin_access",
  "openzeppelin_introspection",
  "openzeppelin_utils",
- "snforge_std",
 ]
 
 [[package]]
 name = "openzeppelin_introspection"
 version = "0.15.0-rc.0"
-dependencies = [
- "snforge_std",
-]
 
 [[package]]
 name = "openzeppelin_presets"
@@ -62,7 +55,6 @@ dependencies = [
  "openzeppelin_introspection",
  "openzeppelin_token",
  "openzeppelin_upgrades",
- "snforge_std",
 ]
 
 [[package]]
@@ -70,7 +62,6 @@ name = "openzeppelin_security"
 version = "0.15.0-rc.0"
 dependencies = [
  "openzeppelin_utils",
- "snforge_std",
 ]
 
 [[package]]
@@ -80,7 +71,6 @@ dependencies = [
  "openzeppelin_account",
  "openzeppelin_governance",
  "openzeppelin_introspection",
- "snforge_std",
 ]
 
 [[package]]
@@ -88,17 +78,8 @@ name = "openzeppelin_upgrades"
 version = "0.15.0-rc.0"
 dependencies = [
  "openzeppelin_utils",
- "snforge_std",
 ]
 
 [[package]]
 name = "openzeppelin_utils"
 version = "0.15.0-rc.0"
-dependencies = [
- "snforge_std",
-]
-
-[[package]]
-name = "snforge_std"
-version = "0.26.0"
-source = "git+https://github.com/foundry-rs/starknet-foundry.git?tag=v0.26.0#50eb589db65e113efe4f09241feb59b574228c7e"

@@ -21,9 +21,6 @@ openzeppelin_introspection = { path = "../introspection" }
 openzeppelin_utils = { path = "../utils" }
 openzeppelin_token = { path = "../token" }
 
-[dev-dependencies]
-snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.26.0" }
-
 [lib]
 
 [[target.starknet-contract]]

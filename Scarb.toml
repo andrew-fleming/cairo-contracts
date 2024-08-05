@@ -50,9 +50,6 @@ openzeppelin_token = { path = "packages/token" }
 openzeppelin_upgrades = { path = "packages/upgrades" }
 openzeppelin_utils = { path = "packages/utils" }
 
-[dev-dependencies]
-snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.26.0" }
-
 [lib]
 
 [[target.starknet-contract]]
