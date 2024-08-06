@@ -4,6 +4,7 @@ pub use openzeppelin_governance as governance;
 pub use openzeppelin_introspection as introspection;
 pub use openzeppelin_presets as presets;
 pub use openzeppelin_security as security;
+pub use openzeppelin_testing as testing;
 pub use openzeppelin_token as token;
 pub use openzeppelin_upgrades as upgrades;
 pub use openzeppelin_utils as utils;

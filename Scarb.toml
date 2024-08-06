@@ -52,11 +52,11 @@ openzeppelin_security = { path = "packages/security" }
 openzeppelin_token = { path = "packages/token" }
 openzeppelin_upgrades = { path = "packages/upgrades" }
 openzeppelin_utils = { path = "packages/utils" }
+openzeppelin_testing = { path = "packages/testing" }
 
 [dev-dependencies]
 snforge_std.workspace = true
 openzeppelin_test_common = { path = "packages/test_common" }
-openzeppelin_testing = { path = "packages/testing" }
 
 [lib]
 
