@@ -7,3 +7,6 @@ pub use openzeppelin_security as security;
 pub use openzeppelin_token as token;
 pub use openzeppelin_upgrades as upgrades;
 pub use openzeppelin_utils as utils;
+
+#[cfg(test)]
+mod tests;
