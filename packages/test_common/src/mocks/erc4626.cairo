@@ -254,29 +254,29 @@ pub mod ERC4626FeesMock {
 
     pub impl OffsetConfig of ERC4626Component::ImmutableConfig {
         const UNDERLYING_DECIMALS: u8 = ERC4626Component::DEFAULT_UNDERLYING_DECIMALS;
-        const DECIMALS_OFFSET: u8 = 1;
+        const DECIMALS_OFFSET: u8 = 0;
     }
 
-    const _BASIS_POINT_SCALE: u256 = 1_000;
+    const _BASIS_POINT_SCALE: u256 = 10_000;
 
     impl ERC4626HooksEmptyImpl of ERC4626Component::ERC4626HooksTrait<ContractState> {
         fn adjust_assets_or_shares(
             self: @ERC4626Component::ComponentState<ContractState>, exchange_type: ExchangeType, raw_amount: u256
         ) -> u256 {
+            let contract_state = ERC4626Component::HasComponent::get_contract(self);
             match exchange_type {
-                _ => { raw_amount }
-                //ExchangeType::Mint => {
-                //    self.preview_mint(raw_amount)
-                //},
-                //ExchangeType::Deposit => {
-                //    self.preview_deposit(raw_amount)
-                //},
-                //ExchangeType::Withdraw => {
-                //    self.preview_withdraw(raw_amount)
-                //},
-                //ExchangeType::Redeem => {
-                //    self.preview_redeem(raw_amount)
-                //}
+                ExchangeType::Mint => {
+                    contract_state._preview_mint(raw_amount)
+                },
+                ExchangeType::Deposit => {
+                    contract_state._preview_deposit(raw_amount)
+                },
+                ExchangeType::Withdraw => {
+                    contract_state._preview_withdraw(raw_amount)
+                },
+                ExchangeType::Redeem => {
+                    contract_state._preview_redeem(raw_amount)
+                }
             }
         }
     }
@@ -306,21 +306,21 @@ pub mod ERC4626FeesMock {
 
     #[generate_trait]
     pub impl InternalImpl of InternalTrait {
-        fn preview_deposit(self: @ContractState, assets:u256) -> u256 {
+        fn _preview_deposit(self: @ContractState, assets:u256) -> u256 {
             let fee = self._fee_on_total(assets, self.entry_fee_basis_point_value.read());
             assets - fee
         }
 
-        fn preview_mint(self: @ContractState, assets: u256) -> u256 {
+        fn _preview_mint(self: @ContractState, assets: u256) -> u256 {
             assets + self._fee_on_raw(assets, self.entry_fee_basis_point_value.read())
         }
 
-        fn preview_withdraw(self: @ContractState, assets:u256) -> u256 {
+        fn _preview_withdraw(self: @ContractState, assets:u256) -> u256 {
             let fee = self._fee_on_raw(assets, self.exit_fee_basis_point_value.read());
             assets + fee
         }
 
-        fn preview_redeem(self: @ContractState, assets: u256) -> u256 {
+        fn _preview_redeem(self: @ContractState, assets: u256) -> u256 {
             assets - self._fee_on_total(assets, self.exit_fee_basis_point_value.read())
         }
 
