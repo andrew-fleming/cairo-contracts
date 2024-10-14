@@ -1105,9 +1105,16 @@ fn setup_fees() -> (IERC20ReentrantDispatcher, ERC4626ABIDispatcher) {
 fn test_input_fees_deposit() {
     let (asset, vault) = setup_fees();
 
-    let VALUE_WITH_FEES = 10_000_u256;
+//let fee_basis_points = 500_u256; // 5%
+//let _value_without_fees = 10_000_u256;
+//let _fees = (_value_without_fees * fee_basis_points) / 10_000_u256;
+//let _value_with_fees = _value_without_fees - _fees;//let fee_basis_points = 500_u256; // 5%
+//let _value_without_fees = 10_000_u256;
+//let _fees = (_value_without_fees * fee_basis_points) / 10_000_u256;
+//let _value_with_fees = _value_without_fees - _fees;
 
-    let value_with_fees = vault.preview_deposit()
+    let actual_value = vault.preview_deposit(VALUE_WITH_FEES);
+    assert_eq!();
     let max_redeem = vault.max_redeem(HOLDER());
     cheat_caller_address(vault.contract_address, HOLDER(), CheatSpan::TargetCalls(1));
     vault.redeem(max_redeem + 1, HOLDER(), HOLDER());
