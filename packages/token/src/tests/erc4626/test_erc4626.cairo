@@ -24,6 +24,10 @@ fn HOLDER() -> ContractAddress {
     contract_address_const::<'HOLDER'>()
 }
 
+fn TREASURY() -> ContractAddress {
+    contract_address_const::<'TREASURY'>()
+}
+
 fn VAULT_NAME() -> ByteArray {
     "VAULT"
 }
@@ -87,6 +91,46 @@ fn deploy_vault_offset_minted_shares(
 
 fn deploy_vault_offset(asset_address: ContractAddress) -> ERC4626ABIDispatcher {
     deploy_vault_offset_minted_shares(asset_address, 0, HOLDER())
+}
+
+fn deploy_vault_fees(asset_address: ContractAddress) -> ERC4626ABIDispatcher {
+    let no_shares = 0_u256;
+
+    let fee_basis_points = 500_u256; // 5%
+    let _value_without_fees = 10_000_u256;
+    let _fees = (_value_without_fees * fee_basis_points) / 10_000_u256;
+    let _value_with_fees = _value_without_fees - _fees;
+
+    let mut vault_calldata: Array<felt252> = array![];
+    vault_calldata.append_serde(VAULT_NAME());
+    vault_calldata.append_serde(VAULT_SYMBOL());
+    vault_calldata.append_serde(asset_address);
+    vault_calldata.append_serde(no_shares);
+    vault_calldata.append_serde(HOLDER());
+
+    // Enter fees
+    vault_calldata.append_serde(fee_basis_points);
+    vault_calldata.append_serde(TREASURY());
+    // No exit fees
+    vault_calldata.append_serde(0);
+    vault_calldata.append_serde(ZERO());
+
+    let contract_address = utils::declare_and_deploy("ERC4626FeesMock", vault_calldata);
+    ERC4626ABIDispatcher { contract_address }
+}
+
+fn deploy_vault_limits(asset_address: ContractAddress) -> ERC4626ABIDispatcher {
+    let no_shares = 0_u256;
+
+    let mut vault_calldata: Array<felt252> = array![];
+    vault_calldata.append_serde(VAULT_NAME());
+    vault_calldata.append_serde(VAULT_SYMBOL());
+    vault_calldata.append_serde(asset_address);
+    vault_calldata.append_serde(no_shares);
+    vault_calldata.append_serde(HOLDER());
+
+    let contract_address = utils::declare_and_deploy("ERC4626LimitsMock", vault_calldata);
+    ERC4626ABIDispatcher { contract_address }
 }
 
 //
@@ -982,6 +1026,91 @@ fn test_price_change_during_reentrancy_doesnt_affect_withdraw() {
     // Check that price is modified after reentrant tx
     let shares_after = vault.preview_withdraw(value);
     assert(shares_after > shares_before, 'Burn should change share price');
+}
+
+//
+// Limits
+//
+
+fn setup_limits() -> (IERC20ReentrantDispatcher, ERC4626ABIDispatcher) {
+    let mut asset = deploy_asset();
+    let mut vault = deploy_vault_limits(asset.contract_address);
+
+    (asset, vault)
+}
+
+#[test]
+#[should_panic(expected: 'ERC4626: exceeds max deposit')]
+fn test_max_limit_deposit() {
+    let (_, vault) = setup_limits();
+
+    let max_deposit = vault.max_deposit(HOLDER());
+    cheat_caller_address(vault.contract_address, HOLDER(), CheatSpan::TargetCalls(1));
+    vault.deposit(max_deposit + 1, HOLDER());
+}
+
+#[test]
+#[should_panic(expected: 'ERC4626: exceeds max mint')]
+fn test_max_limit_mint() {
+    let (_, vault) = setup_limits();
+
+    let max_mint = vault.max_mint(HOLDER());
+    cheat_caller_address(vault.contract_address, HOLDER(), CheatSpan::TargetCalls(1));
+    vault.mint(max_mint + 1, HOLDER());
+}
+
+#[test]
+#[should_panic(expected: 'ERC4626: exceeds max withdraw')]
+fn test_max_limit_withdraw() {
+    let (_, vault) = setup_limits();
+
+    let max_withdraw = vault.max_redeem(HOLDER());
+    cheat_caller_address(vault.contract_address, HOLDER(), CheatSpan::TargetCalls(1));
+    vault.withdraw(max_withdraw + 1, HOLDER(), HOLDER());
+}
+
+#[test]
+#[should_panic(expected: 'ERC4626: exceeds max redeem')]
+fn test_max_limit_redeem() {
+    let (_, vault) = setup_limits();
+
+    let max_redeem = vault.max_redeem(HOLDER());
+    cheat_caller_address(vault.contract_address, HOLDER(), CheatSpan::TargetCalls(1));
+    vault.redeem(max_redeem + 1, HOLDER(), HOLDER());
+}
+
+//
+// Fees
+//
+
+fn setup_fees() -> (IERC20ReentrantDispatcher, ERC4626ABIDispatcher) {
+    let mut asset = deploy_asset();
+    let mut vault = deploy_vault_fees(asset.contract_address);
+
+    let half_max: u256 = Bounded::MAX / 2;
+    asset.unsafe_mint(HOLDER(), half_max);
+
+    cheat_caller_address(asset.contract_address, HOLDER(), CheatSpan::TargetCalls(1));
+    asset.approve(vault.contract_address, half_max);
+
+    (asset, vault)
+}
+
+//let fee_basis_points = 500_u256; // 5%
+//let _value_without_fees = 10_000_u256;
+//let _fees = (_value_without_fees * fee_basis_points) / 10_000_u256;
+//let _value_with_fees = _value_without_fees - _fees;
+
+#[test]
+fn test_input_fees_deposit() {
+    let (asset, vault) = setup_fees();
+
+    let VALUE_WITH_FEES = 10_000_u256;
+
+    let value_with_fees = vault.preview_deposit()
+    let max_redeem = vault.max_redeem(HOLDER());
+    cheat_caller_address(vault.contract_address, HOLDER(), CheatSpan::TargetCalls(1));
+    vault.redeem(max_redeem + 1, HOLDER(), HOLDER());
 }
 
 //

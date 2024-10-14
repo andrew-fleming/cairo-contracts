@@ -86,6 +86,7 @@ pub mod ERC4626Component {
     impl ERC4626<
         TContractState,
         +HasComponent<TContractState>,
+        impl Hooks: ERC4626HooksTrait<TContractState>,
         impl Immutable: ImmutableConfig,
         impl ERC20: ERC20Component::HasComponent<TContractState>,
         +ERC20Component::ERC20HooksTrait<TContractState>,
@@ -109,11 +110,13 @@ pub mod ERC4626Component {
         }
 
         fn max_deposit(self: @ComponentState<TContractState>, receiver: ContractAddress) -> u256 {
-            Bounded::MAX
+            let raw_amount = Bounded::MAX;
+            Hooks::adjust_limits(self, ExchangeType::Deposit, raw_amount)
         }
 
         fn preview_deposit(self: @ComponentState<TContractState>, assets: u256) -> u256 {
-            self._convert_to_shares(assets, Rounding::Floor)
+            let raw_amount = self._convert_to_shares(assets, Rounding::Floor);
+            Hooks::adjust_assets_or_shares(self, ExchangeType::Deposit, raw_amount)
         }
 
         fn deposit(
@@ -124,16 +127,20 @@ pub mod ERC4626Component {
 
             let shares = self.preview_deposit(assets);
             let caller = starknet::get_caller_address();
-            self._deposit(caller, receiver, assets, shares);
+            //self._deposit(caller, receiver, assets, shares);
+            let no_address = starknet::contract_address_const::<0>();
+            self._update(ExchangeType::Deposit, caller, receiver, no_address, assets, shares);
             shares
         }
 
         fn max_mint(self: @ComponentState<TContractState>, receiver: ContractAddress) -> u256 {
-            Bounded::MAX
+            let raw_amount = Bounded::MAX;
+            Hooks::adjust_limits(self, ExchangeType::Mint, raw_amount)
         }
 
         fn preview_mint(self: @ComponentState<TContractState>, shares: u256) -> u256 {
-            self._convert_to_assets(shares, Rounding::Ceil)
+            let raw_amount = self._convert_to_assets(shares, Rounding::Ceil);
+            Hooks::adjust_assets_or_shares(self, ExchangeType::Deposit, raw_amount)
         }
 
         fn mint(
@@ -144,18 +151,22 @@ pub mod ERC4626Component {
 
             let assets = self.preview_mint(shares);
             let caller = starknet::get_caller_address();
-            self._deposit(caller, receiver, assets, shares);
+            //self._deposit(caller, receiver, assets, shares);
+            let no_address = starknet::contract_address_const::<0>();
+            self._update(ExchangeType::Mint, caller, receiver, no_address, assets, shares);
             assets
         }
 
         fn max_withdraw(self: @ComponentState<TContractState>, owner: ContractAddress) -> u256 {
             let erc20_component = get_dep_component!(self, ERC20);
             let owner_bal = erc20_component.balance_of(owner);
-            self._convert_to_assets(owner_bal, Rounding::Floor)
+            let raw_amount = self._convert_to_assets(owner_bal, Rounding::Floor);
+            Hooks::adjust_limits(self, ExchangeType::Withdraw, raw_amount)
         }
 
         fn preview_withdraw(self: @ComponentState<TContractState>, assets: u256) -> u256 {
-            self._convert_to_shares(assets, Rounding::Ceil)
+            let raw_amount = self._convert_to_shares(assets, Rounding::Ceil);
+            Hooks::adjust_assets_or_shares(self, ExchangeType::Deposit, raw_amount)
         }
 
         fn withdraw(
@@ -169,18 +180,21 @@ pub mod ERC4626Component {
 
             let shares = self.preview_withdraw(assets);
             let caller = starknet::get_caller_address();
-            self._withdraw(caller, receiver, owner, assets, shares);
+            self._update(ExchangeType::Withdraw, caller, receiver, owner, assets, shares);
+
 
             shares
         }
 
         fn max_redeem(self: @ComponentState<TContractState>, owner: ContractAddress) -> u256 {
             let erc20_component = get_dep_component!(self, ERC20);
-            erc20_component.balance_of(owner)
+            let raw_amount = erc20_component.balance_of(owner);
+            Hooks::adjust_limits(self, ExchangeType::Redeem, raw_amount)
         }
 
         fn preview_redeem(self: @ComponentState<TContractState>, shares: u256) -> u256 {
-            self._convert_to_assets(shares, Rounding::Floor)
+            let raw_amount = self._convert_to_assets(shares, Rounding::Floor);
+            Hooks::adjust_assets_or_shares(self, ExchangeType::Deposit, raw_amount)
         }
 
         fn redeem(
@@ -194,7 +208,7 @@ pub mod ERC4626Component {
 
             let assets = self.preview_redeem(shares);
             let caller = starknet::get_caller_address();
-            self._withdraw(caller, receiver, owner, assets, shares);
+            self._update(ExchangeType::Redeem, caller, receiver, owner, assets, shares);
 
             assets
         }
@@ -225,10 +239,19 @@ pub mod ERC4626Component {
         }
     }
 
+    #[derive(Drop, Copy)]
+    pub enum ExchangeType {
+        Deposit,
+        Withdraw,
+        Mint,
+        Redeem
+    }
+
     #[generate_trait]
     pub impl InternalImpl<
         TContractState,
         +HasComponent<TContractState>,
+        impl Hooks: ERC4626HooksTrait<TContractState>,
         impl Immutable: ImmutableConfig,
         impl ERC20: ERC20Component::HasComponent<TContractState>,
         +ERC20Component::ERC20HooksTrait<TContractState>,
@@ -309,8 +332,64 @@ pub mod ERC4626Component {
                 rounding
             )
         }
+
+        fn _update(
+            ref self: ComponentState<TContractState>,
+            exchange_type: ExchangeType,
+            caller: ContractAddress,
+            receiver: ContractAddress,
+            owner: ContractAddress,
+            assets: u256,
+            shares: u256
+        ) {
+            Hooks::before_update(ref self, exchange_type, caller, receiver, owner, assets, shares);
+            match exchange_type {
+                ExchangeType::Deposit => self._deposit(caller, receiver, assets, shares),
+                ExchangeType::Withdraw => self._withdraw(caller, receiver, owner, assets, shares),
+                ExchangeType::Mint => self._mint(caller, receiver, assets, shares),
+                ExchangeType::Redeem => self._withdraw(caller, receiver, owner, assets, shares),
+            };
+            Hooks::after_update(ref self, exchange_type, caller, receiver, owner, assets, shares);
+        }
+    }
+
+    pub trait ERC4626HooksTrait<TContractState> {
+        fn before_update(
+            ref self: ComponentState<TContractState>,
+            exchange_type: ExchangeType,
+            caller: ContractAddress,
+            receiver: ContractAddress,
+            owner: ContractAddress,
+            assets: u256,
+            shares: u256
+        ) {}
+
+        fn after_update(
+            ref self: ComponentState<TContractState>,
+            exchange_type: ExchangeType,
+            caller: ContractAddress,
+            receiver: ContractAddress,
+            owner: ContractAddress,
+            assets: u256,
+            shares: u256
+        ) {}
+
+        fn adjust_assets_or_shares(
+            self: @ComponentState<TContractState>, exchange_type: ExchangeType, raw_amount: u256
+        ) -> u256 {
+            raw_amount
+        }
+
+        fn adjust_limits(
+            self: @ComponentState<TContractState>, exchange_type: ExchangeType, raw_amount: u256
+        ) -> u256 {
+            raw_amount
+        }
     }
 }
+
+pub impl ERC4626HooksEmptyImpl<TContractState> of ERC4626Component::ERC4626HooksTrait<TContractState> {}
+
 
 /// Implementation of the default ERC2981Component ImmutableConfig.
 ///
