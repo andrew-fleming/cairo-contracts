@@ -115,8 +115,8 @@ pub mod ERC4626Component {
         }
 
         fn preview_deposit(self: @ComponentState<TContractState>, assets: u256) -> u256 {
-            let raw_amount = self._convert_to_shares(assets, Rounding::Floor);
-            Hooks::adjust_assets_or_shares(self, ExchangeType::Deposit, raw_amount)
+            let raw_amount = Hooks::adjust_assets_or_shares(self, ExchangeType::Deposit, assets);
+            self._convert_to_shares(raw_amount, Rounding::Floor)
         }
 
         fn deposit(
@@ -165,8 +165,8 @@ pub mod ERC4626Component {
         }
 
         fn preview_withdraw(self: @ComponentState<TContractState>, assets: u256) -> u256 {
-            let raw_amount = self._convert_to_shares(assets, Rounding::Ceil);
-            Hooks::adjust_assets_or_shares(self, ExchangeType::Deposit, raw_amount)
+            let raw_amount = Hooks::adjust_assets_or_shares(self, ExchangeType::Deposit, assets);
+            self._convert_to_shares(raw_amount, Rounding::Ceil)
         }
 
         fn withdraw(
@@ -346,7 +346,7 @@ pub mod ERC4626Component {
             match exchange_type {
                 ExchangeType::Deposit => self._deposit(caller, receiver, assets, shares),
                 ExchangeType::Withdraw => self._withdraw(caller, receiver, owner, assets, shares),
-                ExchangeType::Mint => self._mint(caller, receiver, assets, shares),
+                ExchangeType::Mint => self._deposit(caller, receiver, assets, shares),
                 ExchangeType::Redeem => self._withdraw(caller, receiver, owner, assets, shares),
             };
             Hooks::after_update(ref self, exchange_type, caller, receiver, owner, assets, shares);

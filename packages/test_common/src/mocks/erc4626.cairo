@@ -264,18 +264,19 @@ pub mod ERC4626FeesMock {
             self: @ERC4626Component::ComponentState<ContractState>, exchange_type: ExchangeType, raw_amount: u256
         ) -> u256 {
             match exchange_type {
-                ExchangeType::Mint => {
-                    self.preview_mint(raw_amount)
-                },
-                ExchangeType::Deposit => {
-                    self.preview_deposit(raw_amount)
-                },
-                ExchangeType::Withdraw => {
-                    self.preview_withdraw(raw_amount)
-                },
-                ExchangeType::Redeem => {
-                    self.preview_redeem(raw_amount)
-                }
+                _ => { raw_amount }
+                //ExchangeType::Mint => {
+                //    self.preview_mint(raw_amount)
+                //},
+                //ExchangeType::Deposit => {
+                //    self.preview_deposit(raw_amount)
+                //},
+                //ExchangeType::Withdraw => {
+                //    self.preview_withdraw(raw_amount)
+                //},
+                //ExchangeType::Redeem => {
+                //    self.preview_redeem(raw_amount)
+                //}
             }
         }
     }
