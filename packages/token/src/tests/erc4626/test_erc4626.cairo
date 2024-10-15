@@ -1185,11 +1185,29 @@ fn test_input_fees_mint() {
 #[test]
 fn test_output_fees_redeem() {
     let (asset, vault) = setup_output_fees();
-//
-//    let FEE_BASIS_POINTS: u256 = 500; // 5%
-//    let VALUE_WITHOUT_FEES: u256 = 10_000;
-//    let FEES = (VALUE_WITHOUT_FEES * FEE_BASIS_POINTS) / 10_000;
-//    let VALUE_WITH_FEES = VALUE_WITHOUT_FEES + FEES;
+
+    let FEE_BASIS_POINTS: u256 = 500; // 5%
+    let VALUE_WITHOUT_FEES: u256 = 10_000;
+    let FEES = (VALUE_WITHOUT_FEES * FEE_BASIS_POINTS) / 10_000;
+    let VALUE_WITH_FEES = VALUE_WITHOUT_FEES + FEES;
+
+    let preview_redeem = vault.preview_redeem(VALUE_WITH_FEES);
+    assert_eq!(preview_redeem, VALUE_WITHOUT_FEES);
+
+    let other_asset_bal = asset.balance_of(OTHER());
+    let recipient_asset_bal = asset.balance_of(RECIPIENT());
+    let vault_asset_bal = asset.balance_of(vault.contract_address);
+
+    let mut spy = spy_events();
+    cheat_caller_address(vault.contract_address, HOLDER(), CheatSpan::TargetCalls(1));
+    vault.redeem(VALUE_WITH_FEES, RECIPIENT(), HOLDER());
+
+    // Check asset balances
+    assert_expected_assets(asset, OTHER(), other_asset_bal + FEES);
+    assert_expected_assets(asset, vault.contract_address, vault_asset_bal + VALUE_WITHOUT_FEES);
+    assert_expected_assets(asset, TREASURY(), FEES);
+
+
 //
 //    let actual_value = vault.preview_redeem(VALUE_WITHOUT_FEES);
 //    assert_eq!(actual_value, VALUE_WITH_FEES);
