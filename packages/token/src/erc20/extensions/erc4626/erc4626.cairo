@@ -191,7 +191,7 @@ pub mod ERC4626Component {
 
         fn preview_redeem(self: @ComponentState<TContractState>, shares: u256) -> u256 {
             let raw_amount = self._convert_to_assets(shares, Rounding::Floor);
-            Hooks::adjust_assets_or_shares(self, ExchangeType::Deposit, raw_amount)
+            Hooks::adjust_assets_or_shares(self, ExchangeType::Redeem, raw_amount)
         }
 
         fn redeem(
