@@ -1253,8 +1253,8 @@ fn test_output_fees_withdraw() {
     let FEES = (VALUE_WITHOUT_FEES * FEE_BASIS_POINTS) / 10_000;
     let VALUE_WITH_FEES = VALUE_WITHOUT_FEES + FEES;
 
-    let preview_redeem = vault.preview_withdraw(VALUE_WITHOUT_FEES);
-    assert_eq!(preview_redeem, VALUE_WITH_FEES);
+    let preview_withdraw = vault.preview_withdraw(VALUE_WITHOUT_FEES);
+    assert_eq!(preview_withdraw, VALUE_WITH_FEES);
 
     let vault_asset_bal = asset.balance_of(vault.contract_address);
     let recipient_asset_bal = asset.balance_of(RECIPIENT());
