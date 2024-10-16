@@ -82,10 +82,86 @@ pub mod ERC4626Component {
         }
     }
 
+    pub trait FeeConfigTrait<TContractState> {
+        fn adjust_deposit(
+            self: @ComponentState<TContractState>,
+            assets: u256
+        ) -> u256 {
+            assets
+        }
+
+        fn adjust_mint(
+            self: @ComponentState<TContractState>,
+            shares: u256
+        ) -> u256 {
+            shares
+        }
+
+        fn adjust_withdraw(
+            self: @ComponentState<TContractState>,
+            assets: u256
+        ) -> u256 {
+            assets
+        }
+
+        fn adjust_redeem(
+            self: @ComponentState<TContractState>,
+            shares: u256
+        ) -> u256 {
+            shares
+        }
+    }
+
+    pub trait LimitConfigTrait<TContractState> {
+        fn deposit_limit(
+            self: @ComponentState<TContractState>,
+            receiver: ContractAddress
+        ) -> Option::<u256> {
+            Option::None
+        }
+
+        fn mint_limit(
+            self: @ComponentState<TContractState>,
+            receiver: ContractAddress
+        ) -> Option::<u256> {
+            Option::None
+        }
+
+        fn withdraw_limit(
+            self: @ComponentState<TContractState>,
+            owner: ContractAddress
+        ) -> Option::<u256> {
+            Option::None
+        }
+
+        fn redeem_limit(
+            self: @ComponentState<TContractState>,
+            owner: ContractAddress
+        ) -> Option::<u256> {
+            Option::None
+        }
+    }
+
+    pub trait ERC4626HooksTrait<TContractState> {
+        fn before_withdraw(
+            ref self: ComponentState<TContractState>,
+            assets: u256,
+            shares: u256
+        ) {}
+
+        fn after_deposit(
+            ref self: ComponentState<TContractState>,
+            assets: u256,
+            shares: u256
+        ) {}
+    }
+
     #[embeddable_as(ERC4626Impl)]
     impl ERC4626<
         TContractState,
         +HasComponent<TContractState>,
+        impl Fee: FeeConfigTrait<TContractState>,
+        impl Limit: LimitConfigTrait<TContractState>,
         impl Hooks: ERC4626HooksTrait<TContractState>,
         impl Immutable: ImmutableConfig,
         impl ERC20: ERC20Component::HasComponent<TContractState>,
@@ -110,13 +186,15 @@ pub mod ERC4626Component {
         }
 
         fn max_deposit(self: @ComponentState<TContractState>, receiver: ContractAddress) -> u256 {
-            let raw_amount = Bounded::MAX;
-            Hooks::adjust_limits(self, ExchangeType::Deposit, raw_amount)
+            match Limit::deposit_limit(self, receiver) {
+                Option::Some(limit) => limit,
+                Option::None => Bounded::MAX
+            }
         }
 
         fn preview_deposit(self: @ComponentState<TContractState>, assets: u256) -> u256 {
-            let raw_amount = Hooks::adjust_assets_or_shares(self, ExchangeType::Deposit, assets);
-            self._convert_to_shares(raw_amount, Rounding::Floor)
+            let adjusted_assets = Fee::adjust_deposit(self, assets);
+            self._convert_to_shares(adjusted_assets, Rounding::Floor)
         }
 
         fn deposit(
@@ -133,13 +211,15 @@ pub mod ERC4626Component {
         }
 
         fn max_mint(self: @ComponentState<TContractState>, receiver: ContractAddress) -> u256 {
-            let raw_amount = Bounded::MAX;
-            Hooks::adjust_limits(self, ExchangeType::Mint, raw_amount)
+            match Limit::mint_limit(self, receiver) {
+                Option::Some(limit) => limit,
+                Option::None => Bounded::MAX
+            }
         }
 
         fn preview_mint(self: @ComponentState<TContractState>, shares: u256) -> u256 {
             let raw_amount = self._convert_to_assets(shares, Rounding::Ceil);
-            Hooks::adjust_assets_or_shares(self, ExchangeType::Mint, raw_amount)
+            Fee::adjust_mint(self, raw_amount)
         }
 
         fn mint(
@@ -156,15 +236,19 @@ pub mod ERC4626Component {
         }
 
         fn max_withdraw(self: @ComponentState<TContractState>, owner: ContractAddress) -> u256 {
-            let erc20_component = get_dep_component!(self, ERC20);
-            let owner_bal = erc20_component.balance_of(owner);
-            let raw_amount = self._convert_to_assets(owner_bal, Rounding::Floor);
-            Hooks::adjust_limits(self, ExchangeType::Withdraw, raw_amount)
+            match Limit::withdraw_limit(self, owner) {
+                Option::Some(limit) => limit,
+                Option::None => {
+                    let erc20_component = get_dep_component!(self, ERC20);
+                    let owner_bal = erc20_component.balance_of(owner);
+                    self._convert_to_assets(owner_bal, Rounding::Floor)
+                }
+            }
         }
 
         fn preview_withdraw(self: @ComponentState<TContractState>, assets: u256) -> u256 {
-            let raw_amount = Hooks::adjust_assets_or_shares(self, ExchangeType::Withdraw, assets);
-            self._convert_to_shares(raw_amount, Rounding::Ceil)
+            let adjusted_assets = Fee::adjust_withdraw(self, assets);
+            self._convert_to_shares(adjusted_assets, Rounding::Ceil)
         }
 
         fn withdraw(
@@ -184,14 +268,18 @@ pub mod ERC4626Component {
         }
 
         fn max_redeem(self: @ComponentState<TContractState>, owner: ContractAddress) -> u256 {
-            let erc20_component = get_dep_component!(self, ERC20);
-            let raw_amount = erc20_component.balance_of(owner);
-            Hooks::adjust_limits(self, ExchangeType::Redeem, raw_amount)
+            match Limit::redeem_limit(self, owner) {
+                Option::Some(limit) => limit,
+                Option::None => {
+                    let erc20_component = get_dep_component!(self, ERC20);
+                    erc20_component.balance_of(owner)
+                }
+            }
         }
 
         fn preview_redeem(self: @ComponentState<TContractState>, shares: u256) -> u256 {
             let raw_amount = self._convert_to_assets(shares, Rounding::Floor);
-            Hooks::adjust_assets_or_shares(self, ExchangeType::Redeem, raw_amount)
+            Fee::adjust_redeem(self, raw_amount)
         }
 
         fn redeem(
@@ -236,14 +324,6 @@ pub mod ERC4626Component {
         }
     }
 
-    #[derive(Drop, Copy)]
-    pub enum ExchangeType {
-        Deposit,
-        Withdraw,
-        Mint,
-        Redeem
-    }
-
     #[generate_trait]
     pub impl InternalImpl<
         TContractState,
@@ -251,6 +331,8 @@ pub mod ERC4626Component {
         impl Hooks: ERC4626HooksTrait<TContractState>,
         impl Immutable: ImmutableConfig,
         impl ERC20: ERC20Component::HasComponent<TContractState>,
+        +FeeConfigTrait<TContractState>,
+        +LimitConfigTrait<TContractState>,
         +ERC20Component::ERC20HooksTrait<TContractState>,
         +Drop<TContractState>
     > of InternalTrait<TContractState> {
@@ -336,37 +418,14 @@ pub mod ERC4626Component {
             )
         }
     }
-
-    pub trait ERC4626HooksTrait<TContractState> {
-        fn before_withdraw(
-            ref self: ComponentState<TContractState>,
-            assets: u256,
-            shares: u256
-        ) {}
-
-        fn after_deposit(
-            ref self: ComponentState<TContractState>,
-            assets: u256,
-            shares: u256
-        ) {}
-
-        fn adjust_assets_or_shares(
-            self: @ComponentState<TContractState>, exchange_type: ExchangeType, raw_amount: u256
-        ) -> u256 {
-            raw_amount
-        }
-
-        fn adjust_limits(
-            self: @ComponentState<TContractState>, exchange_type: ExchangeType, raw_amount: u256
-        ) -> u256 {
-            raw_amount
-        }
-    }
 }
 
+/// Empty (default) traits
 pub impl ERC4626HooksEmptyImpl<TContractState> of ERC4626Component::ERC4626HooksTrait<TContractState> {}
+pub impl ERC4626DefaultNoFees<TContractState> of ERC4626Component::FeeConfigTrait<TContractState> {}
+pub impl ERC4626DefaultLimits<TContractState> of ERC4626Component::LimitConfigTrait<TContractState> {}
 
-/// Implementation of the default ERC2981Component ImmutableConfig.
+/// Implementation of the default ERC4626Component ImmutableConfig.
 ///
 /// See
 /// https://github.com/starknet-io/SNIPs/blob/963848f0752bde75c7087c2446d83b7da8118b25/SNIPS/snip-107.md#defaultconfig-implementation
@@ -381,7 +440,8 @@ pub impl DefaultConfig of ERC4626Component::ImmutableConfig {
 #[cfg(test)]
 mod Test {
     use openzeppelin_test_common::mocks::erc4626::ERC4626Mock;
-    use starknet::contract_address_const;
+    use super::ERC4626DefaultLimits;
+    use super::ERC4626DefaultNoFees;
     use super::ERC4626Component::InternalImpl;
     use super::ERC4626Component;
 
@@ -391,7 +451,7 @@ mod Test {
         ERC4626Component::component_state_for_testing()
     }
 
-    // Invalid fee denominator
+    // Invalid decimals
     impl InvalidImmutableConfig of ERC4626Component::ImmutableConfig {
         const UNDERLYING_DECIMALS: u8 = 255;
         const DECIMALS_OFFSET: u8 = 1;
@@ -401,7 +461,7 @@ mod Test {
     #[should_panic(expected: 'ERC4626: decimals overflow')]
     fn test_initializer_invalid_config_panics() {
         let mut state = COMPONENT_STATE();
-        let asset = contract_address_const::<'ASSET'>();
+        let asset = starknet::contract_address_const::<'ASSET'>();
 
         state.initializer(asset);
     }
