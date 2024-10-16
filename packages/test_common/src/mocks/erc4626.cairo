@@ -280,6 +280,24 @@ pub mod ERC4626FeesMock {
             }
         }
 
+        fn before_withdraw(ref self: ERC4626Component::ComponentState<ContractState>, assets: u256, shares: u256) {
+            let mut contract_state = ERC4626Component::HasComponent::get_contract_mut(ref self);
+            let fee = contract_state._fee_on_raw(assets, contract_state.exit_fee_basis_point_value.read());
+            let recipient = contract_state.exit_fee_recipient.read();
+
+            if (fee > 0 && recipient != starknet::get_contract_address()) {
+                // Transfer fees to recipient
+                let asset_addr = contract_state.asset();
+                let selector = selector!("transfer");
+                let mut calldata: Array<felt252> = array![];
+                calldata.append_serde(recipient);
+                calldata.append_serde(fee);
+
+                let ret = starknet::syscalls::call_contract_syscall(asset_addr, selector, calldata.span()).unwrap_syscall();
+                assert_eq!(*ret.at(0), 1); /// true
+            }
+        }
+
         fn adjust_assets_or_shares(
             self: @ERC4626Component::ComponentState<ContractState>, exchange_type: ExchangeType, raw_amount: u256
         ) -> u256 {
