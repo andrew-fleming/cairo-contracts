@@ -82,6 +82,9 @@ pub mod ERC4626Component {
         }
     }
 
+    /// Adjustments for fees expected to be defined on the contract level.
+    /// Defaults to no entry or exit fees.
+    /// To transfer fees, this trait needs to be coordinated with ERC4626Component hooks.
     pub trait FeeConfigTrait<TContractState> {
         fn adjust_deposit(
             self: @ComponentState<TContractState>,
@@ -112,6 +115,7 @@ pub mod ERC4626Component {
         }
     }
 
+    /// Sets custom limits to the target exchange type and is expected to be defined at the contract level.
     pub trait LimitConfigTrait<TContractState> {
         fn deposit_limit(
             self: @ComponentState<TContractState>,
@@ -142,6 +146,8 @@ pub mod ERC4626Component {
         }
     }
 
+    /// Allows contracts to hook logic into deposit and withdraw transactions.
+    /// This is where contracts can transfer fees.
     pub trait ERC4626HooksTrait<TContractState> {
         fn before_withdraw(
             ref self: ComponentState<TContractState>,
