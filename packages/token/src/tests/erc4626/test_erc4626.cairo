@@ -1168,9 +1168,15 @@ fn test_input_fees_deposit() {
     assert_expected_shares(vault, RECIPIENT(), VALUE_WITHOUT_FEES);
 
     // Check events
-    spy.assert_event_transfer(asset.contract_address, HOLDER(), vault.contract_address, VALUE_WITH_FEES);
+    spy
+        .assert_event_transfer(
+            asset.contract_address, HOLDER(), vault.contract_address, VALUE_WITH_FEES
+        );
     spy.assert_event_transfer(vault.contract_address, ZERO(), RECIPIENT(), VALUE_WITHOUT_FEES);
-    spy.assert_event_deposit(vault.contract_address, HOLDER(), RECIPIENT(), VALUE_WITH_FEES, VALUE_WITHOUT_FEES);
+    spy
+        .assert_event_deposit(
+            vault.contract_address, HOLDER(), RECIPIENT(), VALUE_WITH_FEES, VALUE_WITHOUT_FEES
+        );
     spy.assert_event_transfer(asset.contract_address, vault.contract_address, TREASURY(), FEES);
 }
 
@@ -1202,9 +1208,15 @@ fn test_input_fees_mint() {
     assert_expected_shares(vault, RECIPIENT(), VALUE_WITHOUT_FEES);
 
     // Check events
-    spy.assert_event_transfer(asset.contract_address, HOLDER(), vault.contract_address, VALUE_WITH_FEES);
+    spy
+        .assert_event_transfer(
+            asset.contract_address, HOLDER(), vault.contract_address, VALUE_WITH_FEES
+        );
     spy.assert_event_transfer(vault.contract_address, ZERO(), RECIPIENT(), VALUE_WITHOUT_FEES);
-    spy.assert_event_deposit(vault.contract_address, HOLDER(), RECIPIENT(), VALUE_WITH_FEES, VALUE_WITHOUT_FEES);
+    spy
+        .assert_event_deposit(
+            vault.contract_address, HOLDER(), RECIPIENT(), VALUE_WITH_FEES, VALUE_WITHOUT_FEES
+        );
     spy.assert_event_transfer(asset.contract_address, vault.contract_address, TREASURY(), FEES);
 }
 
@@ -1240,8 +1252,19 @@ fn test_output_fees_redeem() {
     // Check events
     spy.assert_event_transfer(asset.contract_address, vault.contract_address, TREASURY(), FEES);
     spy.assert_event_transfer(vault.contract_address, HOLDER(), ZERO(), VALUE_WITH_FEES);
-    spy.assert_event_transfer(asset.contract_address, vault.contract_address, RECIPIENT(), VALUE_WITHOUT_FEES);
-    spy.assert_only_event_withdraw(vault.contract_address, HOLDER(), RECIPIENT(), HOLDER(), VALUE_WITHOUT_FEES, VALUE_WITH_FEES);
+    spy
+        .assert_event_transfer(
+            asset.contract_address, vault.contract_address, RECIPIENT(), VALUE_WITHOUT_FEES
+        );
+    spy
+        .assert_only_event_withdraw(
+            vault.contract_address,
+            HOLDER(),
+            RECIPIENT(),
+            HOLDER(),
+            VALUE_WITHOUT_FEES,
+            VALUE_WITH_FEES
+        );
 }
 
 #[test]
@@ -1276,8 +1299,19 @@ fn test_output_fees_withdraw() {
     // Check events
     spy.assert_event_transfer(asset.contract_address, vault.contract_address, TREASURY(), FEES);
     spy.assert_event_transfer(vault.contract_address, HOLDER(), ZERO(), VALUE_WITH_FEES);
-    spy.assert_event_transfer(asset.contract_address, vault.contract_address, RECIPIENT(), VALUE_WITHOUT_FEES);
-    spy.assert_only_event_withdraw(vault.contract_address, HOLDER(), RECIPIENT(), HOLDER(), VALUE_WITHOUT_FEES, VALUE_WITH_FEES);
+    spy
+        .assert_event_transfer(
+            asset.contract_address, vault.contract_address, RECIPIENT(), VALUE_WITHOUT_FEES
+        );
+    spy
+        .assert_only_event_withdraw(
+            vault.contract_address,
+            HOLDER(),
+            RECIPIENT(),
+            HOLDER(),
+            VALUE_WITHOUT_FEES,
+            VALUE_WITH_FEES
+        );
 }
 
 //

@@ -86,61 +86,46 @@ pub mod ERC4626Component {
     /// Defaults to no entry or exit fees.
     /// To transfer fees, this trait needs to be coordinated with ERC4626Component hooks.
     pub trait FeeConfigTrait<TContractState> {
-        fn adjust_deposit(
-            self: @ComponentState<TContractState>,
-            assets: u256
-        ) -> u256 {
+        fn adjust_deposit(self: @ComponentState<TContractState>, assets: u256) -> u256 {
             assets
         }
 
-        fn adjust_mint(
-            self: @ComponentState<TContractState>,
-            shares: u256
-        ) -> u256 {
+        fn adjust_mint(self: @ComponentState<TContractState>, shares: u256) -> u256 {
             shares
         }
 
-        fn adjust_withdraw(
-            self: @ComponentState<TContractState>,
-            assets: u256
-        ) -> u256 {
+        fn adjust_withdraw(self: @ComponentState<TContractState>, assets: u256) -> u256 {
             assets
         }
 
-        fn adjust_redeem(
-            self: @ComponentState<TContractState>,
-            shares: u256
-        ) -> u256 {
+        fn adjust_redeem(self: @ComponentState<TContractState>, shares: u256) -> u256 {
             shares
         }
     }
 
-    /// Sets custom limits to the target exchange type and is expected to be defined at the contract level.
+    /// Sets custom limits to the target exchange type and is expected to be defined at the contract
+    /// level.
     pub trait LimitConfigTrait<TContractState> {
         fn deposit_limit(
-            self: @ComponentState<TContractState>,
-            receiver: ContractAddress
+            self: @ComponentState<TContractState>, receiver: ContractAddress
         ) -> Option::<u256> {
             Option::None
         }
 
         fn mint_limit(
-            self: @ComponentState<TContractState>,
-            receiver: ContractAddress
+            self: @ComponentState<TContractState>, receiver: ContractAddress
         ) -> Option::<u256> {
             Option::None
         }
 
         fn withdraw_limit(
-            self: @ComponentState<TContractState>,
-            owner: ContractAddress
+            self: @ComponentState<TContractState>, owner: ContractAddress
         ) -> Option::<u256> {
             Option::None
         }
 
         fn redeem_limit(
-            self: @ComponentState<TContractState>,
-            owner: ContractAddress
+            self: @ComponentState<TContractState>, owner: ContractAddress
         ) -> Option::<u256> {
             Option::None
         }
@@ -149,17 +134,9 @@ pub mod ERC4626Component {
     /// Allows contracts to hook logic into deposit and withdraw transactions.
     /// This is where contracts can transfer fees.
     pub trait ERC4626HooksTrait<TContractState> {
-        fn before_withdraw(
-            ref self: ComponentState<TContractState>,
-            assets: u256,
-            shares: u256
-        ) {}
+        fn before_withdraw(ref self: ComponentState<TContractState>, assets: u256, shares: u256) {}
 
-        fn after_deposit(
-            ref self: ComponentState<TContractState>,
-            assets: u256,
-            shares: u256
-        ) {}
+        fn after_deposit(ref self: ComponentState<TContractState>, assets: u256, shares: u256) {}
     }
 
     #[embeddable_as(ERC4626Impl)]
@@ -427,9 +404,13 @@ pub mod ERC4626Component {
 }
 
 /// Empty (default) traits
-pub impl ERC4626HooksEmptyImpl<TContractState> of ERC4626Component::ERC4626HooksTrait<TContractState> {}
+pub impl ERC4626HooksEmptyImpl<
+    TContractState
+> of ERC4626Component::ERC4626HooksTrait<TContractState> {}
 pub impl ERC4626DefaultNoFees<TContractState> of ERC4626Component::FeeConfigTrait<TContractState> {}
-pub impl ERC4626DefaultLimits<TContractState> of ERC4626Component::LimitConfigTrait<TContractState> {}
+pub impl ERC4626DefaultLimits<
+    TContractState
+> of ERC4626Component::LimitConfigTrait<TContractState> {}
 
 /// Implementation of the default ERC4626Component ImmutableConfig.
 ///
@@ -446,10 +427,10 @@ pub impl DefaultConfig of ERC4626Component::ImmutableConfig {
 #[cfg(test)]
 mod Test {
     use openzeppelin_test_common::mocks::erc4626::ERC4626Mock;
-    use super::ERC4626DefaultLimits;
-    use super::ERC4626DefaultNoFees;
     use super::ERC4626Component::InternalImpl;
     use super::ERC4626Component;
+    use super::ERC4626DefaultLimits;
+    use super::ERC4626DefaultNoFees;
 
     type ComponentState = ERC4626Component::ComponentState<ERC4626Mock::ContractState>;
 
