@@ -17,7 +17,7 @@ pub mod ERC4626Component {
     use starknet::ContractAddress;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
-    // The defualt values are only used when the DefaultConfig
+    // The default values are only used when the DefaultConfig
     // is in scope in the implementing contract.
     pub const DEFAULT_UNDERLYING_DECIMALS: u8 = 18;
     pub const DEFAULT_DECIMALS_OFFSET: u8 = 0;
@@ -84,7 +84,7 @@ pub mod ERC4626Component {
 
     /// Adjustments for fees expected to be defined on the contract level.
     /// Defaults to no entry or exit fees.
-    /// To transfer fees, this trait needs to be coordinated with ERC4626Component hooks.
+    /// To transfer fees, this trait needs to be coordinated with ERC4626Component::ERC4626Hooks.
     pub trait FeeConfigTrait<TContractState> {
         fn adjust_deposit(self: @ComponentState<TContractState>, assets: u256) -> u256 {
             assets
@@ -135,7 +135,6 @@ pub mod ERC4626Component {
     /// This is where contracts can transfer fees.
     pub trait ERC4626HooksTrait<TContractState> {
         fn before_withdraw(ref self: ComponentState<TContractState>, assets: u256, shares: u256) {}
-
         fn after_deposit(ref self: ComponentState<TContractState>, assets: u256, shares: u256) {}
     }
 
@@ -151,23 +150,32 @@ pub mod ERC4626Component {
         +ERC20Component::ERC20HooksTrait<TContractState>,
         +Drop<TContractState>
     > of IERC4626<ComponentState<TContractState>> {
+        /// Returns the address of the underlying token used for the Vault for accounting, depositing, and withdrawing.
         fn asset(self: @ComponentState<TContractState>) -> ContractAddress {
             self.ERC4626_asset.read()
         }
 
+        /// Returns the total amount of the underlying asset that is “managed” by Vault.
         fn total_assets(self: @ComponentState<TContractState>) -> u256 {
             let this = starknet::get_contract_address();
             IERC20Dispatcher { contract_address: self.ERC4626_asset.read() }.balance_of(this)
         }
 
+        /// Returns the amount of shares that the Vault would exchange for the amount of assets provided,
+        /// in an ideal scenario where all the conditions are met.
         fn convert_to_shares(self: @ComponentState<TContractState>, assets: u256) -> u256 {
             self._convert_to_shares(assets, Rounding::Floor)
         }
 
+        /// Returns the amount of assets that the Vault would exchange for the amount of shares provided,
+        /// in an ideal scenario where all the conditions are met.
         fn convert_to_assets(self: @ComponentState<TContractState>, shares: u256) -> u256 {
             self._convert_to_assets(shares, Rounding::Floor)
         }
 
+        /// Returns the maximum amount of the underlying asset that can be deposited into the Vault for the receiver,
+        /// through a deposit call.
+        /// If the `LimitConfigTrait` is not defined for deposits, returns 2 ** 256 - 1.
         fn max_deposit(self: @ComponentState<TContractState>, receiver: ContractAddress) -> u256 {
             match Limit::deposit_limit(self, receiver) {
                 Option::Some(limit) => limit,
@@ -175,11 +183,21 @@ pub mod ERC4626Component {
             }
         }
 
+        /// Allows an on-chain or off-chain user to simulate the effects of their deposit at the current block,
+        /// given current on-chain conditions.
+        /// If the `FeeConfigTrait` is not defined for deposits, returns the full amount of shares.
         fn preview_deposit(self: @ComponentState<TContractState>, assets: u256) -> u256 {
             let adjusted_assets = Fee::adjust_deposit(self, assets);
             self._convert_to_shares(adjusted_assets, Rounding::Floor)
         }
 
+        /// Mints Vault shares to `receiver` by depositing exactly `assets` of underlying tokens.
+        /// Returns the amount of newly-minted shares.
+        ///
+        /// Requirements:
+        /// - `assets` is less than or equal to the max deposit amount for `receiver`.
+        ///
+        /// Emits a `Deposit` event.
         fn deposit(
             ref self: ComponentState<TContractState>, assets: u256, receiver: ContractAddress
         ) -> u256 {
@@ -193,6 +211,8 @@ pub mod ERC4626Component {
             shares
         }
 
+        /// Returns the maximum amount of the Vault shares that can be minted for `receiver` through a `mint` call.
+        /// If the `LimitConfigTrait` is not defined for mints, returns 2 ** 256 - 1.
         fn max_mint(self: @ComponentState<TContractState>, receiver: ContractAddress) -> u256 {
             match Limit::mint_limit(self, receiver) {
                 Option::Some(limit) => limit,
@@ -200,11 +220,21 @@ pub mod ERC4626Component {
             }
         }
 
+        /// Allows an on-chain or off-chain user to simulate the effects of their mint at the current block,
+        /// given current on-chain conditions.
+        /// If the `FeeConfigTrait` is not defined for mints, returns the full amount of assets.
         fn preview_mint(self: @ComponentState<TContractState>, shares: u256) -> u256 {
             let raw_amount = self._convert_to_assets(shares, Rounding::Ceil);
             Fee::adjust_mint(self, raw_amount)
         }
 
+        /// Mints exactly Vault `shares` to `receiver` by depositing amount of underlying tokens.
+        /// Returns the amount deposited assets.
+        ///
+        /// Requirements:
+        /// - `shares` is less than or equal to the max shares amount for `receiver`.
+        ///
+        /// Emits a `Deposit` event.
         fn mint(
             ref self: ComponentState<TContractState>, shares: u256, receiver: ContractAddress
         ) -> u256 {
@@ -218,6 +248,10 @@ pub mod ERC4626Component {
             assets
         }
 
+        /// Returns the maximum amount of the underlying asset that can be withdrawn from the owner balance in the Vault,
+        /// through a `withdraw` call.
+        /// If the `LimitConfigTrait` is not defined for withdraws, returns the full balance of assets for
+        /// `owner` (converted to shares).
         fn max_withdraw(self: @ComponentState<TContractState>, owner: ContractAddress) -> u256 {
             match Limit::withdraw_limit(self, owner) {
                 Option::Some(limit) => limit,
@@ -229,11 +263,20 @@ pub mod ERC4626Component {
             }
         }
 
+        /// Allows an on-chain or off-chain user to simulate the effects of their withdrawal at the current block,
+        /// given current on-chain conditions.
+        /// If the `FeeConfigTrait` is not defined for withdraws, returns the full amount of shares.
         fn preview_withdraw(self: @ComponentState<TContractState>, assets: u256) -> u256 {
             let adjusted_assets = Fee::adjust_withdraw(self, assets);
             self._convert_to_shares(adjusted_assets, Rounding::Ceil)
         }
 
+        /// Burns shares from `owner` and sends exactly `assets` of underlying tokens to `receiver`.
+        ///
+        /// Requirements:
+        /// - `assets` is less than or equal to the max withdraw amount of `owner`.
+        ///
+        /// Emits a `Withdraw` event.
         fn withdraw(
             ref self: ComponentState<TContractState>,
             assets: u256,
@@ -250,6 +293,10 @@ pub mod ERC4626Component {
             shares
         }
 
+        /// Returns the maximum amount of Vault shares that can be redeemed from the owner balance in the Vault,
+        /// through a `redeem` call.
+        /// If the `LimitConfigTrait` is not defined for redeems, returns the full balance of assets for
+        /// `owner`.
         fn max_redeem(self: @ComponentState<TContractState>, owner: ContractAddress) -> u256 {
             match Limit::redeem_limit(self, owner) {
                 Option::Some(limit) => limit,
@@ -260,11 +307,20 @@ pub mod ERC4626Component {
             }
         }
 
+        /// Allows an on-chain or off-chain user to simulate the effects of their redeemption at the current block,
+        /// given current on-chain conditions.
+        /// If the `FeeConfigTrait` is not defined for redeems, returns the full amount of assets.
         fn preview_redeem(self: @ComponentState<TContractState>, shares: u256) -> u256 {
             let raw_amount = self._convert_to_assets(shares, Rounding::Floor);
             Fee::adjust_redeem(self, raw_amount)
         }
 
+        /// Burns exactly `shares` from `owner` and sends assets of underlying tokens to `receiver`.
+        ///
+        /// Requirements:
+        /// - `shares` is less than or equal to the max redeem amount of `owner`.
+        ///
+        /// Emits a `Withdraw` event.
         fn redeem(
             ref self: ComponentState<TContractState>,
             shares: u256,
@@ -301,7 +357,8 @@ pub mod ERC4626Component {
             erc20_component.ERC20_symbol.read()
         }
 
-        /// Returns the number of decimals used to get its user representation.
+        /// Returns the cumulative number of decimals which includes both the underlying and offset decimals.
+        /// Both of which must be defined in the `ImmutableConfig` inside the implementing contract.
         fn decimals(self: @ComponentState<TContractState>) -> u8 {
             Immutable::UNDERLYING_DECIMALS + Immutable::DECIMALS_OFFSET
         }
@@ -319,12 +376,27 @@ pub mod ERC4626Component {
         +ERC20Component::ERC20HooksTrait<TContractState>,
         +Drop<TContractState>
     > of InternalTrait<TContractState> {
+        /// Validates the `ImmutableConfig` constants and sets the `asset_address` to the vault.
+        /// This should be set in the contract's constructor.
+        ///
+        /// Requirements:
+        /// - `asset_address` cannot be the zero address.
         fn initializer(ref self: ComponentState<TContractState>, asset_address: ContractAddress) {
             ImmutableConfig::validate();
             assert(!asset_address.is_zero(), Errors::INVALID_ASSET_ADDRESS);
             self.ERC4626_asset.write(asset_address);
         }
 
+        /// Business logic for `deposit` and `mint`.
+        /// Transfers `assets` from `caller` to the Vault contract then mints `shares` to `receiver`.
+        /// Fees can be transferred in the `ERC4626Hooks::after_deposit` hook which is executed after
+        /// the business logic.
+        ///
+        /// Requirements:
+        /// - `ERC20::transfer_from` must return true.
+        ///
+        /// Emits two `ERC20::Transfer` events (`ERC20::mint` and `ERC20::transfer_from`).
+        /// Emits a `Deposit` event.
         fn _deposit(
             ref self: ComponentState<TContractState>,
             caller: ContractAddress,
@@ -348,6 +420,16 @@ pub mod ERC4626Component {
             Hooks::after_deposit(ref self, assets, shares);
         }
 
+        /// Business logic for `withdraw` and `redeem`.
+        /// Burns `shares` from `owner` and then transfers `assets` to `receiver`.
+        /// Fees can be transferred in the `ERC4626Hooks::before_withdraw` hook which is executed before
+        /// the business logic.
+        ///
+        /// Requirements:
+        /// - `ERC20::transfer` must return true.
+        ///
+        /// Emits two `ERC20::Transfer` events (`ERC20::burn` and `ERC20::transfer`).
+        /// Emits a `Withdraw` event.
         fn _withdraw(
             ref self: ComponentState<TContractState>,
             caller: ContractAddress,
@@ -373,6 +455,7 @@ pub mod ERC4626Component {
             self.emit(Withdraw { sender: caller, receiver, owner, assets, shares });
         }
 
+        /// Internal conversion function (from assets to shares) with support for `rounding` direction.
         fn _convert_to_shares(
             self: @ComponentState<TContractState>, assets: u256, rounding: Rounding
         ) -> u256 {
@@ -387,6 +470,7 @@ pub mod ERC4626Component {
             )
         }
 
+        /// Internal conversion function (from shares to assets) with support for `rounding` direction.
         fn _convert_to_assets(
             self: @ComponentState<TContractState>, shares: u256, rounding: Rounding
         ) -> u256 {
@@ -403,7 +487,10 @@ pub mod ERC4626Component {
     }
 }
 
-/// Empty (default) traits
+///
+/// Default (empty) traits
+///
+
 pub impl ERC4626HooksEmptyImpl<
     TContractState
 > of ERC4626Component::ERC4626HooksTrait<TContractState> {}
@@ -412,7 +499,7 @@ pub impl ERC4626DefaultLimits<
     TContractState
 > of ERC4626Component::LimitConfigTrait<TContractState> {}
 
-/// Implementation of the default ERC4626Component ImmutableConfig.
+/// Implementation of the default `ERC4626Component::ImmutableConfig`.
 ///
 /// See
 /// https://github.com/starknet-io/SNIPs/blob/963848f0752bde75c7087c2446d83b7da8118b25/SNIPS/snip-107.md#defaultconfig-implementation
