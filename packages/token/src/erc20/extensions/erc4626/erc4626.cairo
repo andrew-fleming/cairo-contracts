@@ -114,11 +114,17 @@ pub mod ERC4626Component {
         const UNDERLYING_DECIMALS: u8;
         const DECIMALS_OFFSET: u8;
 
-        fn validate() {
+        fn validate(asset_address: ContractAddress) {
             assert(
                 Bounded::MAX - Self::UNDERLYING_DECIMALS >= Self::DECIMALS_OFFSET,
                 Errors::DECIMALS_OVERFLOW,
-            )
+            );
+
+            let try_decimals = starknet::syscalls::call_contract_syscall(asset_address, selector!("decimals"), array![].span());
+            match try_decimals {
+                Result::Ok(dec) => assert(*dec.at(0) == Self::UNDERLYING_DECIMALS.into(), ''),
+                Result::Err(err) => assert(*err.at(0) == 'ENTRYPOINT_NOT_FOUND', '')
+            }
         }
     }
 
@@ -462,8 +468,8 @@ pub mod ERC4626Component {
         ///
         /// - `asset_address` cannot be the zero address.
         fn initializer(ref self: ComponentState<TContractState>, asset_address: ContractAddress) {
-            ImmutableConfig::validate();
             assert(asset_address.is_non_zero(), Errors::INVALID_ASSET_ADDRESS);
+            ImmutableConfig::validate(asset_address);
             self.ERC4626_asset.write(asset_address);
         }
 

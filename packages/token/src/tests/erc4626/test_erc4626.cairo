@@ -17,7 +17,7 @@ use openzeppelin_testing as utils;
 use openzeppelin_testing::constants::{NAME, OTHER, RECIPIENT, SPENDER, SYMBOL, ZERO};
 use openzeppelin_testing::events::EventSpyExt;
 use openzeppelin_utils::serde::SerializedAppend;
-use snforge_std::{CheatSpan, EventSpy, cheat_caller_address, spy_events};
+use snforge_std::{CheatSpan, EventSpy, cheat_caller_address, spy_events, start_mock_call};
 use starknet::{ContractAddress, contract_address_const};
 
 fn ASSET() -> ContractAddress {
@@ -190,6 +190,34 @@ fn test_initializer_zero_address_asset() {
     state.initializer(ZERO());
 }
 
+#[test]
+fn test_initializer_matching_underlying_decimals() {
+    let mut state = COMPONENT_STATE();
+
+    // `UNDERLYING_DECIMALS` is set to 18 in this context.
+    // This test confirms that matching decimals
+    // will not result in an error.
+    let good_decimals = 18;
+    start_mock_call(ASSET(), selector!("decimals"), good_decimals);
+    state.initializer(ASSET());
+}
+
+#[test]
+#[should_panic(expected: '')]
+fn test_initializer_mismatched_underlying_decimals() {
+    let mut state = COMPONENT_STATE();
+
+    let asset_address = state.asset();
+    assert_eq!(asset_address, ZERO());
+
+    // `UNDERLYING_DECIMALS` is not set in this context,
+    // so the value is 0. This test confirms the decimals check
+    // in `ImmutableConfig::validate`
+    let bad_decimals = 123;
+    start_mock_call(ASSET(), selector!("decimals"), bad_decimals);
+    state.initializer(ASSET());
+}
+
 //
 // asset
 //
@@ -201,6 +229,10 @@ fn test_asset() {
     let asset_address = state.asset();
     assert_eq!(asset_address, ZERO());
 
+    // Mock the invoked call from `validate`
+    // because we're just testing the address is stored
+    // and the `UNDERLYING_DECIMALS` is 18 in this context
+    start_mock_call(ASSET(), selector!("decimals"), 18);
     state.initializer(ASSET());
 
     let asset_address = state.asset();
