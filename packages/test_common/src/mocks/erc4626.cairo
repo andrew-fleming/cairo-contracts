@@ -109,6 +109,7 @@ pub mod ERC4626OffsetMock {
     pub impl OffsetConfig of ERC4626Component::ImmutableConfig {
         const UNDERLYING_DECIMALS: u8 = ERC4626Component::DEFAULT_UNDERLYING_DECIMALS;
         const DECIMALS_OFFSET: u8 = 1;
+        const FEE_DENOMINATOR: u256 = 10_000;
     }
 
     #[constructor]
@@ -174,6 +175,7 @@ pub mod ERC4626LimitsMock {
     pub impl OffsetConfig of ERC4626Component::ImmutableConfig {
         const UNDERLYING_DECIMALS: u8 = ERC4626Component::DEFAULT_UNDERLYING_DECIMALS;
         const DECIMALS_OFFSET: u8 = 1;
+        const FEE_DENOMINATOR: u256 = 10_000;
     }
 
     const MAX_DEPOSIT: u256 = 100_000_000_000_000_000_000;
@@ -268,6 +270,7 @@ pub mod ERC4626FeesMock {
     impl OffsetConfig of ERC4626Component::ImmutableConfig {
         const UNDERLYING_DECIMALS: u8 = ERC4626Component::DEFAULT_UNDERLYING_DECIMALS;
         const DECIMALS_OFFSET: u8 = 0;
+        const FEE_DENOMINATOR: u256 = 10_000;
     }
 
     /// Hooks
@@ -301,32 +304,14 @@ pub mod ERC4626FeesMock {
 
     /// Adjust fees
     impl AdjustFeesImpl of FeeConfigTrait<ContractState> {
-        fn adjust_deposit(
-            self: @ERC4626Component::ComponentState<ContractState>, assets: u256,
-        ) -> u256 {
+        fn entry_fee_numerator(self: @ERC4626Component::ComponentState<ContractState>, assets: u256) -> u256 {
             let contract_state = ERC4626Component::HasComponent::get_contract(self);
             contract_state.remove_fee_from_deposit(assets)
         }
 
-        fn adjust_mint(
-            self: @ERC4626Component::ComponentState<ContractState>, assets: u256,
-        ) -> u256 {
+        fn exit_fee_numerator(self: @ERC4626Component::ComponentState<ContractState>, assets: u256) -> u256 {
             let contract_state = ERC4626Component::HasComponent::get_contract(self);
             contract_state.add_fee_to_mint(assets)
-        }
-
-        fn adjust_withdraw(
-            self: @ERC4626Component::ComponentState<ContractState>, assets: u256,
-        ) -> u256 {
-            let contract_state = ERC4626Component::HasComponent::get_contract(self);
-            contract_state.add_fee_to_withdraw(assets)
-        }
-
-        fn adjust_redeem(
-            self: @ERC4626Component::ComponentState<ContractState>, assets: u256,
-        ) -> u256 {
-            let contract_state = ERC4626Component::HasComponent::get_contract(self);
-            contract_state.remove_fee_from_redeem(assets)
         }
     }
 

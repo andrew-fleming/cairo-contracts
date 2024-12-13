@@ -47,6 +47,7 @@ pub mod ERC4626Component {
     // is in scope in the implementing contract.
     pub const DEFAULT_UNDERLYING_DECIMALS: u8 = 18;
     pub const DEFAULT_DECIMALS_OFFSET: u8 = 0;
+    pub const DEFAULT_FEE_DENOMINATOR: u256 = 10_000;
 
     #[storage]
     pub struct Storage {
@@ -113,6 +114,7 @@ pub mod ERC4626Component {
     pub trait ImmutableConfig {
         const UNDERLYING_DECIMALS: u8;
         const DECIMALS_OFFSET: u8;
+        const FEE_DENOMINATOR: u256;
 
         fn validate(asset_address: ContractAddress) {
             assert(
@@ -132,19 +134,11 @@ pub mod ERC4626Component {
     /// Defaults to no entry or exit fees.
     /// To transfer fees, this trait needs to be coordinated with `ERC4626Component::ERC4626Hooks`.
     pub trait FeeConfigTrait<TContractState> {
-        fn adjust_deposit(self: @ComponentState<TContractState>, assets: u256) -> u256 {
+        fn entry_fee_numerator(self: @ComponentState<TContractState>, assets: u256) -> u256 {
             assets
         }
 
-        fn adjust_mint(self: @ComponentState<TContractState>, assets: u256) -> u256 {
-            assets
-        }
-
-        fn adjust_withdraw(self: @ComponentState<TContractState>, assets: u256) -> u256 {
-            assets
-        }
-
-        fn adjust_redeem(self: @ComponentState<TContractState>, assets: u256) -> u256 {
+        fn exit_fee_numerator(self: @ComponentState<TContractState>, assets: u256) -> u256 {
             assets
         }
     }
@@ -245,7 +239,7 @@ pub mod ERC4626Component {
         /// This can be changed in the implementing contract by defining custom logic in
         /// `FeeConfigTrait::adjust_deposit`.
         fn preview_deposit(self: @ComponentState<TContractState>, assets: u256) -> u256 {
-            let adjusted_assets = Fee::adjust_deposit(self, assets);
+            let adjusted_assets = Fee::entry_fee_numerator(self, assets);
             self._convert_to_shares(adjusted_assets, Rounding::Floor)
         }
 
@@ -291,7 +285,7 @@ pub mod ERC4626Component {
         /// `FeeConfigTrait::adjust_mint`.
         fn preview_mint(self: @ComponentState<TContractState>, shares: u256) -> u256 {
             let full_assets = self._convert_to_assets(shares, Rounding::Ceil);
-            Fee::adjust_mint(self, full_assets)
+            Fee::exit_fee_numerator(self, full_assets)
         }
 
         /// Mints exactly Vault `shares` to `receiver` by depositing amount of underlying tokens.
@@ -340,7 +334,7 @@ pub mod ERC4626Component {
         /// This can be changed in the implementing contract by defining custom logic in
         /// `FeeConfigTrait::adjust_withdraw`.
         fn preview_withdraw(self: @ComponentState<TContractState>, assets: u256) -> u256 {
-            let adjusted_assets = Fee::adjust_withdraw(self, assets);
+            let adjusted_assets = Fee::entry_fee_numerator(self, assets);
             self._convert_to_shares(adjusted_assets, Rounding::Ceil)
         }
 
@@ -391,7 +385,7 @@ pub mod ERC4626Component {
         /// `FeeConfigTrait::adjust_redeem`.
         fn preview_redeem(self: @ComponentState<TContractState>, shares: u256) -> u256 {
             let full_assets = self._convert_to_assets(shares, Rounding::Floor);
-            Fee::adjust_redeem(self, full_assets)
+            Fee::exit_fee_numerator(self, full_assets)
         }
 
         /// Burns exactly `shares` from `owner` and sends assets of underlying tokens to `receiver`.
@@ -601,6 +595,7 @@ pub impl ERC4626DefaultLimits<
 pub impl DefaultConfig of ERC4626Component::ImmutableConfig {
     const UNDERLYING_DECIMALS: u8 = ERC4626Component::DEFAULT_UNDERLYING_DECIMALS;
     const DECIMALS_OFFSET: u8 = ERC4626Component::DEFAULT_DECIMALS_OFFSET;
+    const FEE_DENOMINATOR: u256 = ERC4626Component::DEFAULT_FEE_DENOMINATOR;
 }
 
 #[cfg(test)]
@@ -619,6 +614,7 @@ mod Test {
     impl InvalidImmutableConfig of ERC4626Component::ImmutableConfig {
         const UNDERLYING_DECIMALS: u8 = 255;
         const DECIMALS_OFFSET: u8 = 1;
+        const FEE_DENOMINATOR: u256 = 10_000;
     }
 
     #[test]
