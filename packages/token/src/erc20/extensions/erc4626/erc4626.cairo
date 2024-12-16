@@ -40,7 +40,9 @@ pub mod ERC4626Component {
     use crate::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use openzeppelin_utils::math;
     use openzeppelin_utils::math::Rounding;
+    use openzeppelin_utils::serde::SerializedAppend;
     use starknet::ContractAddress;
+    use starknet::SyscallResultTrait;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
     // The default values are only used when the DefaultConfig
@@ -95,6 +97,8 @@ pub mod ERC4626Component {
         pub const TOKEN_TRANSFER_FAILED: felt252 = 'ERC4626: token transfer failed';
         pub const INVALID_ASSET_ADDRESS: felt252 = 'ERC4626: asset address set to 0';
         pub const DECIMALS_OVERFLOW: felt252 = 'ERC4626: decimals overflow';
+        pub const MISMATCHED_UNDERLYING_DECIMALS: felt252 = 'ERC4626: decimals do not match';
+        pub const MISSING_IERC20_METADATA: felt252 = 'ERC4626: no asset metadata';
     }
 
     /// Constants expected to be defined at the contract level which configure virtual
@@ -110,37 +114,43 @@ pub mod ERC4626Component {
     /// Requirements:
     ///
     /// - `UNDERLYING_DECIMALS`+ `DECIMALS_OFFSET` cannot exceed 255 (max u8).
+    /// - Add additional reqs
     ///
     pub trait ImmutableConfig {
         const UNDERLYING_DECIMALS: u8;
         const DECIMALS_OFFSET: u8;
         const FEE_DENOMINATOR: u256;
 
-        fn validate(asset_address: ContractAddress) {
+        fn validate(
+            asset_address: ContractAddress,
+        ) {
             assert(
                 Bounded::MAX - Self::UNDERLYING_DECIMALS >= Self::DECIMALS_OFFSET,
                 Errors::DECIMALS_OVERFLOW,
             );
 
-            let try_decimals = starknet::syscalls::call_contract_syscall(asset_address, selector!("decimals"), array![].span());
+            let try_decimals = starknet::syscalls::call_contract_syscall(
+                asset_address, selector!("decimals"), array![].span(),
+            );
             match try_decimals {
-                Result::Ok(dec) => assert(*dec.at(0) == Self::UNDERLYING_DECIMALS.into(), ''),
-                Result::Err(err) => assert(*err.at(0) == 'ENTRYPOINT_NOT_FOUND', '')
+                Result::Ok(dec) => assert(
+                    *dec.at(0) == Self::UNDERLYING_DECIMALS.into(),
+                    Errors::MISMATCHED_UNDERLYING_DECIMALS,
+                ),
+                Result::Err(err) => assert(
+                    *err.at(0) == 'CONTRACT_NOT_DEPLOYED', Errors::MISSING_IERC20_METADATA,
+                ),
             }
         }
     }
 
     /// Adjustments for fees expected to be defined on the contract level.
     /// Defaults to no entry or exit fees.
-    /// To transfer fees, this trait needs to be coordinated with `ERC4626Component::ERC4626Hooks`.
     pub trait FeeConfigTrait<TContractState> {
-        fn entry_fee_numerator(self: @ComponentState<TContractState>, assets: u256) -> u256 {
-            assets
-        }
-
-        fn exit_fee_numerator(self: @ComponentState<TContractState>, assets: u256) -> u256 {
-            assets
-        }
+        const ENTRY_FEE_NUMERATOR: u256;
+        const EXIT_FEE_NUMERATOR: u256;
+        fn entry_fee_recipient() -> ContractAddress;
+        fn exit_fee_recipient() -> ContractAddress;
     }
 
     /// Sets custom limits to the target exchange type and is expected to be defined at the contract
@@ -239,8 +249,9 @@ pub mod ERC4626Component {
         /// This can be changed in the implementing contract by defining custom logic in
         /// `FeeConfigTrait::adjust_deposit`.
         fn preview_deposit(self: @ComponentState<TContractState>, assets: u256) -> u256 {
-            let adjusted_assets = Fee::entry_fee_numerator(self, assets);
-            self._convert_to_shares(adjusted_assets, Rounding::Floor)
+            let adjusted_assets = self.remove_fee_from_deposit(assets);
+            let shares = self._convert_to_shares(adjusted_assets, Rounding::Floor);
+            shares
         }
 
         /// Mints Vault shares to `receiver` by depositing exactly `assets` of underlying tokens.
@@ -284,8 +295,9 @@ pub mod ERC4626Component {
         /// This can be changed in the implementing contract by defining custom logic in
         /// `FeeConfigTrait::adjust_mint`.
         fn preview_mint(self: @ComponentState<TContractState>, shares: u256) -> u256 {
-            let full_assets = self._convert_to_assets(shares, Rounding::Ceil);
-            Fee::exit_fee_numerator(self, full_assets)
+            let assets = self._convert_to_assets(shares, Rounding::Ceil);
+            let adjusted_assets = self.add_fee_to_mint(assets);
+            adjusted_assets
         }
 
         /// Mints exactly Vault `shares` to `receiver` by depositing amount of underlying tokens.
@@ -334,8 +346,9 @@ pub mod ERC4626Component {
         /// This can be changed in the implementing contract by defining custom logic in
         /// `FeeConfigTrait::adjust_withdraw`.
         fn preview_withdraw(self: @ComponentState<TContractState>, assets: u256) -> u256 {
-            let adjusted_assets = Fee::entry_fee_numerator(self, assets);
-            self._convert_to_shares(adjusted_assets, Rounding::Ceil)
+            let adjusted_assets = self.add_fee_to_withdraw(assets);
+            let shares = self._convert_to_shares(adjusted_assets, Rounding::Ceil);
+            shares
         }
 
         /// Burns shares from `owner` and sends exactly `assets` of underlying tokens to `receiver`.
@@ -384,8 +397,9 @@ pub mod ERC4626Component {
         /// This can be changed in the implementing contract by defining custom logic in
         /// `FeeConfigTrait::adjust_redeem`.
         fn preview_redeem(self: @ComponentState<TContractState>, shares: u256) -> u256 {
-            let full_assets = self._convert_to_assets(shares, Rounding::Floor);
-            Fee::exit_fee_numerator(self, full_assets)
+            let assets = self._convert_to_assets(shares, Rounding::Floor);
+            let adjusted_assets = self.remove_fee_from_redeem(assets);
+            adjusted_assets
         }
 
         /// Burns exactly `shares` from `owner` and sends assets of underlying tokens to `receiver`.
@@ -448,9 +462,9 @@ pub mod ERC4626Component {
         TContractState,
         +HasComponent<TContractState>,
         impl Hooks: ERC4626HooksTrait<TContractState>,
+        impl Fee: FeeConfigTrait<TContractState>,
         impl Immutable: ImmutableConfig,
         impl ERC20: ERC20Component::HasComponent<TContractState>,
-        +FeeConfigTrait<TContractState>,
         +LimitConfigTrait<TContractState>,
         +ERC20Component::ERC20HooksTrait<TContractState>,
         +Drop<TContractState>,
@@ -498,8 +512,13 @@ pub mod ERC4626Component {
             erc20_component.mint(receiver, shares);
             self.emit(Deposit { sender: caller, owner: receiver, assets, shares });
 
-            // After deposit hook
-            Hooks::after_deposit(ref self, assets, shares);
+            // Check for fees to transfer
+            let fee = self.fee_on_total(assets, Fee::ENTRY_FEE_NUMERATOR);
+            let recipient = Fee::entry_fee_recipient();
+
+            if (fee > 0 && recipient != starknet::get_contract_address()) {
+                self.transfer_fees(recipient, fee);
+            }
         }
 
         /// Business logic for `withdraw` and `redeem`.
@@ -521,8 +540,12 @@ pub mod ERC4626Component {
             assets: u256,
             shares: u256,
         ) {
-            // Before withdraw hook
-            Hooks::before_withdraw(ref self, assets, shares);
+            // Check for fees to transfer
+            let fee = self.fee_on_raw(assets, Fee::EXIT_FEE_NUMERATOR);
+            let recipient = Fee::exit_fee_recipient();
+            if (fee > 0 && recipient != starknet::get_contract_address()) {
+                self.transfer_fees(recipient, fee);
+            }
 
             // Burn shares first
             let mut erc20_component = get_dep_component_mut!(ref self, ERC20);
@@ -570,6 +593,64 @@ pub mod ERC4626Component {
                 rounding,
             )
         }
+
+        /// Calculates the fees that should be added to an amount `assets` that does not already
+        /// include fees.
+        /// Used in IERC4626::mint and IERC4626::withdraw operations.
+        fn fee_on_raw(
+            self: @ComponentState<TContractState>, assets: u256, fee_basis_points: u256,
+        ) -> u256 {
+            math::u256_mul_div(
+                assets, fee_basis_points, ImmutableConfig::FEE_DENOMINATOR, Rounding::Ceil,
+            )
+        }
+
+        /// Calculates the fee part of an amount `assets` that already includes fees.
+        /// Used in IERC4626::deposit and IERC4626::redeem operations.
+        fn fee_on_total(
+            self: @ComponentState<TContractState>, assets: u256, fee_basis_points: u256,
+        ) -> u256 {
+            math::u256_mul_div(
+                assets,
+                fee_basis_points,
+                fee_basis_points + ImmutableConfig::FEE_DENOMINATOR,
+                Rounding::Ceil,
+            )
+        }
+
+        fn remove_fee_from_deposit(self: @ComponentState<TContractState>, assets: u256) -> u256 {
+            let fee = self.fee_on_total(assets, Fee::ENTRY_FEE_NUMERATOR);
+            assets - fee
+        }
+
+        fn add_fee_to_mint(self: @ComponentState<TContractState>, assets: u256) -> u256 {
+            assets + self.fee_on_raw(assets, Fee::ENTRY_FEE_NUMERATOR)
+        }
+
+        fn add_fee_to_withdraw(self: @ComponentState<TContractState>, assets: u256) -> u256 {
+            let fee = self.fee_on_raw(assets, Fee::EXIT_FEE_NUMERATOR);
+            assets + fee
+        }
+
+        fn remove_fee_from_redeem(self: @ComponentState<TContractState>, assets: u256) -> u256 {
+            assets - self.fee_on_total(assets, Fee::EXIT_FEE_NUMERATOR)
+        }
+
+        fn transfer_fees(
+            ref self: ComponentState<TContractState>, recipient: ContractAddress, fee: u256,
+        ) {
+            let asset_addr = self.asset();
+            let selector = selector!("transfer");
+            let mut calldata: Array<felt252> = array![];
+            calldata.append_serde(recipient);
+            calldata.append_serde(fee);
+
+            let ret = starknet::syscalls::call_contract_syscall(
+                asset_addr, selector, calldata.span(),
+            )
+                .unwrap_syscall();
+            assert_eq!(*ret.at(0), 1); // true
+        }
     }
 }
 
@@ -580,7 +661,8 @@ pub mod ERC4626Component {
 pub impl ERC4626HooksEmptyImpl<
     TContractState,
 > of ERC4626Component::ERC4626HooksTrait<TContractState> {}
-pub impl ERC4626DefaultNoFees<TContractState> of ERC4626Component::FeeConfigTrait<TContractState> {}
+//pub impl ERC4626DefaultNoFees<TContractState> of ERC4626Component::FeeConfigTrait<TContractState>
+//{}
 pub impl ERC4626DefaultLimits<
     TContractState,
 > of ERC4626Component::LimitConfigTrait<TContractState> {}
@@ -597,6 +679,17 @@ pub impl DefaultConfig of ERC4626Component::ImmutableConfig {
     const DECIMALS_OFFSET: u8 = ERC4626Component::DEFAULT_DECIMALS_OFFSET;
     const FEE_DENOMINATOR: u256 = ERC4626Component::DEFAULT_FEE_DENOMINATOR;
 }
+pub impl ERC4626DefaultNoFees<TContractState> of ERC4626Component::FeeConfigTrait<TContractState> {
+    const ENTRY_FEE_NUMERATOR: u256 = 0;
+    const EXIT_FEE_NUMERATOR: u256 = 0;
+    fn entry_fee_recipient() -> starknet::ContractAddress {
+        starknet::contract_address_const::<0>()
+    }
+    fn exit_fee_recipient() -> starknet::ContractAddress {
+        starknet::contract_address_const::<0>()
+    }
+}
+
 
 #[cfg(test)]
 mod Test {

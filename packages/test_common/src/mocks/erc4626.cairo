@@ -277,42 +277,52 @@ pub mod ERC4626FeesMock {
     impl ERC4626HooksEmptyImpl of ERC4626Component::ERC4626HooksTrait<ContractState> {
         fn after_deposit(
             ref self: ERC4626Component::ComponentState<ContractState>, assets: u256, shares: u256,
-        ) {
-            let mut contract_state = ERC4626Component::HasComponent::get_contract_mut(ref self);
-            let entry_basis_points = contract_state.entry_fee_basis_point_value.read();
-            let fee = contract_state.fee_on_total(assets, entry_basis_points);
-            let recipient = contract_state.entry_fee_recipient.read();
-
-            if (fee > 0 && recipient != starknet::get_contract_address()) {
-                contract_state.transfer_fees(recipient, fee);
-            }
+        ) { //let mut contract_state = ERC4626Component::HasComponent::get_contract_mut(ref self);
+        //let entry_basis_points = contract_state.entry_fee_basis_point_value.read();
+        //let fee = contract_state.fee_on_total(assets, entry_basis_points);
+        //let recipient = contract_state.entry_fee_recipient.read();
+        //
+        //if (fee > 0 && recipient != starknet::get_contract_address()) {
+        //    contract_state.transfer_fees(recipient, fee);
+        //}
         }
 
         fn before_withdraw(
             ref self: ERC4626Component::ComponentState<ContractState>, assets: u256, shares: u256,
-        ) {
-            let mut contract_state = ERC4626Component::HasComponent::get_contract_mut(ref self);
-            let exit_basis_points = contract_state.exit_fee_basis_point_value.read();
-            let fee = contract_state.fee_on_raw(assets, exit_basis_points);
-            let recipient = contract_state.exit_fee_recipient.read();
-
-            if (fee > 0 && recipient != starknet::get_contract_address()) {
-                contract_state.transfer_fees(recipient, fee);
-            }
+        ) { //let mut contract_state = ERC4626Component::HasComponent::get_contract_mut(ref self);
+        //let exit_basis_points = contract_state.exit_fee_basis_point_value.read();
+        //let fee = contract_state.fee_on_raw(assets, exit_basis_points);
+        //let recipient = contract_state.exit_fee_recipient.read();
+        //
+        //if (fee > 0 && recipient != starknet::get_contract_address()) {
+        //    contract_state.transfer_fees(recipient, fee);
+        //}
         }
     }
 
     /// Adjust fees
     impl AdjustFeesImpl of FeeConfigTrait<ContractState> {
-        fn entry_fee_numerator(self: @ERC4626Component::ComponentState<ContractState>, assets: u256) -> u256 {
-            let contract_state = ERC4626Component::HasComponent::get_contract(self);
-            contract_state.remove_fee_from_deposit(assets)
+        const ENTRY_FEE_NUMERATOR: u256 = 500;
+        const EXIT_FEE_NUMERATOR: u256 = 500;
+        fn entry_fee_recipient() -> ContractAddress {
+            starknet::contract_address_const::<'TREASURY'>()
         }
-
-        fn exit_fee_numerator(self: @ERC4626Component::ComponentState<ContractState>, assets: u256) -> u256 {
-            let contract_state = ERC4626Component::HasComponent::get_contract(self);
-            contract_state.add_fee_to_mint(assets)
+        fn exit_fee_recipient() -> ContractAddress {
+            starknet::contract_address_const::<'TREASURY'>()
         }
+        //const ENTRY_FEE_RECIPIENT: ContractAddress = 0x;
+    //const EXIT_FEE_RECIPIENT: ContractAddress = contract_address_const::<'TREASURY'>();
+    //        fn entry_fee_numerator(self: @ERC4626Component::ComponentState<ContractState>,
+    //        assets: u256) -> u256 {
+    //            let contract_state = ERC4626Component::HasComponent::get_contract(self);
+    //            contract_state.remove_fee_from_deposit(assets)
+    //        }
+    //
+    //        fn exit_fee_numerator(self: @ERC4626Component::ComponentState<ContractState>,
+    //        assets: u256) -> u256 {
+    //            let contract_state = ERC4626Component::HasComponent::get_contract(self);
+    //            contract_state.add_fee_to_mint(assets)
+    //        }
     }
 
     #[constructor]
