@@ -626,20 +626,28 @@ pub mod ERC4626Component {
             )
         }
 
+        /// Removes fee from `deposit` and `preview_deposit`.
+        /// The total fee is based on the amount of `assets`, entry fee numerator, and fee denominator.
         fn remove_fee_from_deposit(self: @ComponentState<TContractState>, assets: u256) -> u256 {
             let fee = self.fee_on_total(assets, Fee::ENTRY_FEE_NUMERATOR);
             assets - fee
         }
 
+        /// Adds fee to `mint` and `preview_mint`.
+        /// The total fee is based on the amount of `assets`, entry fee numerator, and fee denominator.
         fn add_fee_to_mint(self: @ComponentState<TContractState>, assets: u256) -> u256 {
             assets + self.fee_on_raw(assets, Fee::ENTRY_FEE_NUMERATOR)
         }
 
+        /// Adds fee to `withdraw` and `preview_withdraw`.
+        /// The total fee is based on the amount of `assets`, entry fee numerator, and fee denominator.
         fn add_fee_to_withdraw(self: @ComponentState<TContractState>, assets: u256) -> u256 {
             let fee = self.fee_on_raw(assets, Fee::EXIT_FEE_NUMERATOR);
             assets + fee
         }
 
+        /// Removes fee from `redeem` and `preview_redeem`.
+        /// The total fee is based on the amount of `assets`, entry fee numerator, and fee denominator.
         fn remove_fee_from_redeem(self: @ComponentState<TContractState>, assets: u256) -> u256 {
             assets - self.fee_on_total(assets, Fee::EXIT_FEE_NUMERATOR)
         }
@@ -667,6 +675,13 @@ pub impl DefaultConfig of ERC4626Component::ImmutableConfig {
     const FEE_DENOMINATOR: u256 = ERC4626Component::DEFAULT_FEE_DENOMINATOR;
 }
 
+/// Default implementation of `ERC4626::FeeConfigTrait`.
+/// Entry and exit fee numerators are set to zero.
+/// Entry and exit fee recipients are set to zero.
+///
+/// NOTE: If setting either the entry or exit fee to non-zero, the corresponding recipient
+/// must also be set to non-zero; otherwise, the fees will not be transferred.
+/// Fees cannot be transferred to the zero address.
 pub impl ERC4626DefaultNoFees<TContractState> of ERC4626Component::FeeConfigTrait<TContractState> {
     const ENTRY_FEE_NUMERATOR: u256 = 0;
     const EXIT_FEE_NUMERATOR: u256 = 0;
