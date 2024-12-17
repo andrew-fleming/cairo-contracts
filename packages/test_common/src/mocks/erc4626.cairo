@@ -5,7 +5,6 @@ pub mod ERC4626Mock {
     use openzeppelin_token::erc20::extensions::erc4626::ERC4626Component::InternalTrait as ERC4626InternalTrait;
     use openzeppelin_token::erc20::extensions::erc4626::ERC4626DefaultLimits;
     use openzeppelin_token::erc20::extensions::erc4626::ERC4626DefaultNoFees;
-    use openzeppelin_token::erc20::extensions::erc4626::ERC4626HooksEmptyImpl;
     use openzeppelin_token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
     use starknet::ContractAddress;
 
@@ -66,7 +65,6 @@ pub mod ERC4626OffsetMock {
     use openzeppelin_token::erc20::extensions::erc4626::ERC4626Component::InternalTrait as ERC4626InternalTrait;
     use openzeppelin_token::erc20::extensions::erc4626::ERC4626DefaultLimits;
     use openzeppelin_token::erc20::extensions::erc4626::ERC4626DefaultNoFees;
-    use openzeppelin_token::erc20::extensions::erc4626::ERC4626HooksEmptyImpl;
     use openzeppelin_token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
     use starknet::ContractAddress;
 
@@ -132,7 +130,6 @@ pub mod ERC4626LimitsMock {
     use openzeppelin_token::erc20::extensions::erc4626::ERC4626Component;
     use openzeppelin_token::erc20::extensions::erc4626::ERC4626Component::InternalTrait as ERC4626InternalTrait;
     use openzeppelin_token::erc20::extensions::erc4626::ERC4626DefaultNoFees;
-    use openzeppelin_token::erc20::extensions::erc4626::ERC4626HooksEmptyImpl;
     use openzeppelin_token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
     use starknet::ContractAddress;
 
@@ -217,12 +214,7 @@ pub mod ERC4626FeesMock {
     use openzeppelin_token::erc20::extensions::erc4626::ERC4626Component::InternalTrait as ERC4626InternalTrait;
     use openzeppelin_token::erc20::extensions::erc4626::ERC4626DefaultLimits;
     use openzeppelin_token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
-    use openzeppelin_utils::math;
-    use openzeppelin_utils::math::Rounding;
-    use openzeppelin_utils::serde::SerializedAppend;
     use starknet::ContractAddress;
-    use starknet::SyscallResultTrait;
-    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
     component!(path: ERC4626Component, storage: erc4626, event: ERC4626Event);
     component!(path: ERC20Component, storage: erc20, event: ERC20Event);
@@ -249,10 +241,6 @@ pub mod ERC4626FeesMock {
         pub erc4626: ERC4626Component::Storage,
         #[substorage(v0)]
         pub erc20: ERC20Component::Storage,
-        pub entry_fee_basis_point_value: u256,
-        pub entry_fee_recipient: ContractAddress,
-        pub exit_fee_basis_point_value: u256,
-        pub exit_fee_recipient: ContractAddress,
     }
 
     #[event]
@@ -264,8 +252,6 @@ pub mod ERC4626FeesMock {
         ERC20Event: ERC20Component::Event,
     }
 
-    const _BASIS_POINT_SCALE: u256 = 10_000;
-
     /// Immutable config
     impl OffsetConfig of ERC4626Component::ImmutableConfig {
         const UNDERLYING_DECIMALS: u8 = ERC4626Component::DEFAULT_UNDERLYING_DECIMALS;
@@ -273,56 +259,16 @@ pub mod ERC4626FeesMock {
         const FEE_DENOMINATOR: u256 = 10_000;
     }
 
-    /// Hooks
-    impl ERC4626HooksEmptyImpl of ERC4626Component::ERC4626HooksTrait<ContractState> {
-        fn after_deposit(
-            ref self: ERC4626Component::ComponentState<ContractState>, assets: u256, shares: u256,
-        ) { //let mut contract_state = ERC4626Component::HasComponent::get_contract_mut(ref self);
-        //let entry_basis_points = contract_state.entry_fee_basis_point_value.read();
-        //let fee = contract_state.fee_on_total(assets, entry_basis_points);
-        //let recipient = contract_state.entry_fee_recipient.read();
-        //
-        //if (fee > 0 && recipient != starknet::get_contract_address()) {
-        //    contract_state.transfer_fees(recipient, fee);
-        //}
-        }
-
-        fn before_withdraw(
-            ref self: ERC4626Component::ComponentState<ContractState>, assets: u256, shares: u256,
-        ) { //let mut contract_state = ERC4626Component::HasComponent::get_contract_mut(ref self);
-        //let exit_basis_points = contract_state.exit_fee_basis_point_value.read();
-        //let fee = contract_state.fee_on_raw(assets, exit_basis_points);
-        //let recipient = contract_state.exit_fee_recipient.read();
-        //
-        //if (fee > 0 && recipient != starknet::get_contract_address()) {
-        //    contract_state.transfer_fees(recipient, fee);
-        //}
-        }
-    }
-
     /// Adjust fees
     impl AdjustFeesImpl of FeeConfigTrait<ContractState> {
-        const ENTRY_FEE_NUMERATOR: u256 = 500;
-        const EXIT_FEE_NUMERATOR: u256 = 500;
+        const ENTRY_FEE_NUMERATOR: u256 = 500; // 5%
+        const EXIT_FEE_NUMERATOR: u256 = 500; // 5%
         fn entry_fee_recipient() -> ContractAddress {
             starknet::contract_address_const::<'TREASURY'>()
         }
         fn exit_fee_recipient() -> ContractAddress {
             starknet::contract_address_const::<'TREASURY'>()
         }
-        //const ENTRY_FEE_RECIPIENT: ContractAddress = 0x;
-    //const EXIT_FEE_RECIPIENT: ContractAddress = contract_address_const::<'TREASURY'>();
-    //        fn entry_fee_numerator(self: @ERC4626Component::ComponentState<ContractState>,
-    //        assets: u256) -> u256 {
-    //            let contract_state = ERC4626Component::HasComponent::get_contract(self);
-    //            contract_state.remove_fee_from_deposit(assets)
-    //        }
-    //
-    //        fn exit_fee_numerator(self: @ERC4626Component::ComponentState<ContractState>,
-    //        assets: u256) -> u256 {
-    //            let contract_state = ERC4626Component::HasComponent::get_contract(self);
-    //            contract_state.add_fee_to_mint(assets)
-    //        }
     }
 
     #[constructor]
@@ -333,72 +279,9 @@ pub mod ERC4626FeesMock {
         underlying_asset: ContractAddress,
         initial_supply: u256,
         recipient: ContractAddress,
-        entry_fee: u256,
-        entry_treasury: ContractAddress,
-        exit_fee: u256,
-        exit_treasury: ContractAddress,
     ) {
         self.erc20.initializer(name, symbol);
         self.erc20.mint(recipient, initial_supply);
         self.erc4626.initializer(underlying_asset);
-
-        self.entry_fee_basis_point_value.write(entry_fee);
-        self.entry_fee_recipient.write(entry_treasury);
-        self.exit_fee_basis_point_value.write(exit_fee);
-        self.exit_fee_recipient.write(exit_treasury);
-    }
-
-    #[generate_trait]
-    pub impl InternalImpl of InternalTrait {
-        fn transfer_fees(ref self: ContractState, recipient: ContractAddress, fee: u256) {
-            let asset_addr = self.asset();
-            let selector = selector!("transfer");
-            let mut calldata: Array<felt252> = array![];
-            calldata.append_serde(recipient);
-            calldata.append_serde(fee);
-
-            let ret = starknet::syscalls::call_contract_syscall(
-                asset_addr, selector, calldata.span(),
-            )
-                .unwrap_syscall();
-            assert_eq!(*ret.at(0), 1); // true
-        }
-
-        fn remove_fee_from_deposit(self: @ContractState, assets: u256) -> u256 {
-            let fee = self.fee_on_total(assets, self.entry_fee_basis_point_value.read());
-            assets - fee
-        }
-
-        fn add_fee_to_mint(self: @ContractState, assets: u256) -> u256 {
-            assets + self.fee_on_raw(assets, self.entry_fee_basis_point_value.read())
-        }
-
-        fn add_fee_to_withdraw(self: @ContractState, assets: u256) -> u256 {
-            let fee = self.fee_on_raw(assets, self.exit_fee_basis_point_value.read());
-            assets + fee
-        }
-
-        fn remove_fee_from_redeem(self: @ContractState, assets: u256) -> u256 {
-            assets - self.fee_on_total(assets, self.exit_fee_basis_point_value.read())
-        }
-
-        ///
-        /// Fee operations
-        ///
-
-        /// Calculates the fees that should be added to an amount `assets` that does not already
-        /// include fees.
-        /// Used in IERC4626::mint and IERC4626::withdraw operations.
-        fn fee_on_raw(self: @ContractState, assets: u256, fee_basis_points: u256) -> u256 {
-            math::u256_mul_div(assets, fee_basis_points, _BASIS_POINT_SCALE, Rounding::Ceil)
-        }
-
-        /// Calculates the fee part of an amount `assets` that already includes fees.
-        /// Used in IERC4626::deposit and IERC4626::redeem operations.
-        fn fee_on_total(self: @ContractState, assets: u256, fee_basis_points: u256) -> u256 {
-            math::u256_mul_div(
-                assets, fee_basis_points, fee_basis_points + _BASIS_POINT_SCALE, Rounding::Ceil,
-            )
-        }
     }
 }

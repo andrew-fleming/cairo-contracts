@@ -127,13 +127,6 @@ fn deploy_vault_fees_with_shares(
     vault_calldata.append_serde(shares);
     vault_calldata.append_serde(recipient);
 
-    // Enter fees
-    vault_calldata.append_serde(fee_basis_points);
-    vault_calldata.append_serde(TREASURY());
-    // No exit fees
-    vault_calldata.append_serde(0_u256);
-    vault_calldata.append_serde(ZERO());
-
     let contract_address = utils::declare_and_deploy("ERC4626FeesMock", vault_calldata);
     ERC4626ABIDispatcher { contract_address }
 }
@@ -152,13 +145,6 @@ fn deploy_vault_exit_fees_with_shares(
     vault_calldata.append_serde(asset_address);
     vault_calldata.append_serde(shares);
     vault_calldata.append_serde(recipient);
-
-    // No enter fees
-    vault_calldata.append_serde(0_u256);
-    vault_calldata.append_serde(ZERO());
-    // Exit fees
-    vault_calldata.append_serde(fee_basis_points);
-    vault_calldata.append_serde(TREASURY());
 
     let contract_address = utils::declare_and_deploy("ERC4626FeesMock", vault_calldata);
     ERC4626ABIDispatcher { contract_address }
@@ -203,7 +189,7 @@ fn test_initializer_matching_underlying_decimals() {
 }
 
 #[test]
-#[should_panic(expected: '')]
+#[should_panic(expected: 'ERC4626: decimals do not match')]
 fn test_initializer_mismatched_underlying_decimals() {
     let mut state = COMPONENT_STATE();
 
