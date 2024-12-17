@@ -507,14 +507,7 @@ pub mod ERC4626Component {
             // Check for fees to transfer
             let fee = self.fee_on_total(assets, Fee::ENTRY_FEE_NUMERATOR);
             let fee_recipient = Fee::entry_fee_recipient();
-
-            if (fee > 0
-                && fee_recipient != starknet::get_contract_address()
-                && fee_recipient.is_non_zero()) {
-                assert(
-                    asset_dispatcher.transfer(fee_recipient, fee), Errors::TOKEN_TRANSFER_FAILED,
-                );
-            }
+            self._check_fee_and_transfer(fee, fee_recipient);
         }
 
         /// Business logic for `withdraw` and `redeem`.
@@ -535,16 +528,9 @@ pub mod ERC4626Component {
             shares: u256,
         ) {
             // Check for fees to transfer
-            let asset_dispatcher = IERC20Dispatcher { contract_address: self.ERC4626_asset.read() };
             let fee = self.fee_on_raw(assets, Fee::EXIT_FEE_NUMERATOR);
             let fee_recipient = Fee::exit_fee_recipient();
-            if (fee > 0
-                && fee_recipient != starknet::get_contract_address()
-                && fee_recipient.is_non_zero()) {
-                assert(
-                    asset_dispatcher.transfer(fee_recipient, fee), Errors::TOKEN_TRANSFER_FAILED,
-                );
-            }
+            self._check_fee_and_transfer(fee, fee_recipient);
 
             // Burn shares first
             let mut erc20_component = get_dep_component_mut!(ref self, ERC20);
@@ -554,6 +540,7 @@ pub mod ERC4626Component {
             erc20_component.burn(owner, shares);
 
             // Transfer assets after burn
+            let asset_dispatcher = IERC20Dispatcher { contract_address: self.ERC4626_asset.read() };
             assert(asset_dispatcher.transfer(receiver, assets), Errors::TOKEN_TRANSFER_FAILED);
 
             self.emit(Withdraw { sender: caller, receiver, owner, assets, shares });
@@ -590,6 +577,25 @@ pub mod ERC4626Component {
                 total_supply + 10_u256.pow(Immutable::DECIMALS_OFFSET.into()),
                 rounding,
             )
+        }
+
+        /// Transfers `fee` to `fee_recipient` if:
+        /// - `fee` is greater than zero.
+        /// - `fee_recient` is not this contract's address itself.
+        /// - `fee_recipient` is not zero.
+        ///
+        /// Requirements:
+        ///
+        /// - `IERC20::transfer` must return `true`.
+        fn _check_fee_and_transfer(ref self: ComponentState<TContractState>, fee: u256, fee_recipient: ContractAddress) {
+            if (fee > 0
+                && fee_recipient != starknet::get_contract_address()
+                && fee_recipient.is_non_zero()) {
+                let asset_dispatcher = IERC20Dispatcher { contract_address: self.ERC4626_asset.read() };
+                assert(
+                    asset_dispatcher.transfer(fee_recipient, fee), Errors::TOKEN_TRANSFER_FAILED,
+                );
+            }
         }
 
         /// Calculates the fees that should be added to an amount `assets` that does not already
