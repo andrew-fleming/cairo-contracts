@@ -587,11 +587,15 @@ pub mod ERC4626Component {
         /// Requirements:
         ///
         /// - `IERC20::transfer` must return `true`.
-        fn _check_fee_and_transfer(ref self: ComponentState<TContractState>, fee: u256, fee_recipient: ContractAddress) {
+        fn _check_fee_and_transfer(
+            ref self: ComponentState<TContractState>, fee: u256, fee_recipient: ContractAddress,
+        ) {
             if (fee > 0
                 && fee_recipient != starknet::get_contract_address()
                 && fee_recipient.is_non_zero()) {
-                let asset_dispatcher = IERC20Dispatcher { contract_address: self.ERC4626_asset.read() };
+                let asset_dispatcher = IERC20Dispatcher {
+                    contract_address: self.ERC4626_asset.read(),
+                };
                 assert(
                     asset_dispatcher.transfer(fee_recipient, fee), Errors::TOKEN_TRANSFER_FAILED,
                 );
