@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- ERC721Component `initializer_no_metadata` (#)
+- `initializer_no_metadata` to ERC721Component (#)
 
 ### Changed (Breaking)
 
