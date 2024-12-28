@@ -509,7 +509,7 @@ pub mod ERC721Component {
         /// Initializes the contract with no metadata by registering only the IERC721 interface.
         ///
         /// WARNING: This initializer should ONLY be used during construction in the very
-        /// specific instance when the contract does NOT expose IERC721Metadata.
+        /// specific instance when the contract does NOT expose the IERC721Metadata interface.
         /// Initializing a contract with this initializer means that tokens will not
         /// have a name, symbol, or URI.
         fn initializer_no_metadata(ref self: ComponentState<TContractState>) {
